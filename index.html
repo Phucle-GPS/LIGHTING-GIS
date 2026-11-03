@@ -204,6 +204,7 @@ function rebuild(){P=[];PX=[];PY=[];OX=[];OY=[];PT=[];PK=[];PW=[];NEW=[];DEL=[];
  ED.forEach((e,t)=>{for(const key in e.ns){const n=e.ns[key];const a=IDX.get(n.a),b=IDX.get(n.b);if(a==null||b==null)continue;S.push({a,b,t0:n.t,f:0,key,nw:true,tu:t})}});
  N=P.length}
 const ID=i=>P[i][9];
+const BN=n=>String(n).replace(/[^A-Za-z0-9_$-]/g,'_').slice(0,31);
 // LED trên trụ STK dùng block gộp 'LED-STK'; đèn thứ 2 trở đi chèn 'Den LED' ở vị trí tương ứng
 function emitPoleLamp(i,ins,poleLayer,lampLayer,sc,a0,pb){const lt=lampT(i);const CB=PK[i]===1?(lt==='LED'?'LED-STK':lt==='HPS'?'Bo den chieu sang HPS':null):null;
  if(CB&&SYMR[CB]){const hd=SYMR[CB].head*Math.PI/180;for(let m=0;m<nLamp(i);m++)ins(CB,poleLayer,PX[i],PY[i],a0+m*Math.PI-hd,sc);return}
@@ -531,16 +532,16 @@ function buildDxf(){const out=[];const w=(c,v)=>out.push(String(c),String(v));co
  w(0,'LTYPE');w(2,'CONTINUOUS');w(70,0);w(3,'Solid line');w(72,65);w(73,0);w(40,0.0);
  w(0,'LTYPE');w(2,'DASHED2');w(70,0);w(3,'Dashed (.5x) _ _ _ _');w(72,65);w(73,2);w(40,3.75);w(49,2.5);w(49,-1.25);w(0,'ENDTAB');
  w(0,'TABLE');w(2,'LAYER');w(70,lay.length+2);w(0,'LAYER');w(2,'0');w(70,0);w(62,7);w(6,'CONTINUOUS');w(0,'LAYER');w(2,'TTC');w(70,0);w(62,3);w(6,'CONTINUOUS');
- for(const[n,c,l]of lay){w(0,'LAYER');w(2,n);w(70,0);w(62,c);w(6,l)}w(0,'ENDTAB');w(0,'ENDSEC');
+ for(const[n,c,l]of lay){w(0,'LAYER');w(2,n);w(70,0);w(62,c);w(6,l)}w(0,'ENDTAB');w(0,'TABLE');w(2,'STYLE');w(70,1);w(0,'STYLE');w(2,'STANDARD');w(70,0);w(40,0);w(41,1);w(50,0);w(71,0);w(42,2.5);w(3,'arial.ttf');w(4,'');w(0,'ENDTAB');w(0,'ENDSEC');
  w(0,'SECTION');w(2,'BLOCKS');
- for(const[n,Sy]of Object.entries(SYMR)){w(0,'BLOCK');w(8,0);w(2,n);w(70,0);w(10,0);w(20,0);w(30,0);w(3,n);
+ for(const[n,Sy]of Object.entries(SYMR)){w(0,'BLOCK');w(8,0);w(2,BN(n));w(70,0);w(10,(Sy.ax||0).toFixed(4));w(20,(Sy.ay||0).toFixed(4));w(30,0);w(3,BN(n));
   for(const[fl,gr,p]of Sy.prims){const L=gr?'TTC':0;if(fl){const m=p.length/2;let qx=0,qy=0;for(let q=0;q<p.length;q+=2){qx+=p[q];qy+=p[q+1]}qx/=m;qy/=m;
     for(let q=0;q+3<p.length;q+=2){w(0,'SOLID');w(8,L);w(10,f(qx));w(20,f(qy));w(30,0);w(11,f(p[q]));w(21,f(p[q+1]));w(31,0);w(12,f(p[q+2]));w(22,f(p[q+3]));w(32,0);w(13,f(p[q+2]));w(23,f(p[q+3]));w(33,0)}}
    else{w(0,'POLYLINE');w(8,L);w(66,1);w(10,0);w(20,0);w(30,0);w(70,0);for(let q=0;q<p.length;q+=2){w(0,'VERTEX');w(8,L);w(10,f(p[q]));w(20,f(p[q+1]));w(30,0)}w(0,'SEQEND');w(8,L)}}
   w(0,'ENDBLK');w(8,0)}w(0,'ENDSEC');
  w(0,'SECTION');w(2,'ENTITIES');const X=x=>(x+D.X0).toFixed(3),Y=y=>(y+D.Y0).toFixed(3);
- const ins=(blk,layer,x,y,a)=>{const Sy=SYMR[blk],c=Math.cos(a),s=Math.sin(a);const ix=x-(Sy.ax*c-Sy.ay*s),iy=y-(Sy.ax*s+Sy.ay*c);
-  w(0,'INSERT');w(8,layer);w(2,blk);w(10,X(ix));w(20,Y(iy));w(30,0);if(a)w(50,(((a*180/Math.PI)%360)+360)%360)};
+ const ins=(blk,layer,x,y,a)=>{const Sy=SYMR[blk],c=Math.cos(a),s=Math.sin(a);const ix=x,iy=y;
+  w(0,'INSERT');w(8,layer);w(2,BN(blk));w(10,X(ix));w(20,Y(iy));w(30,0);if(a)w(50,(((a*180/Math.PI)%360)+360)%360)};
  for(let i=0;i<N;i++){const t=PT[i];if(!pv(i))continue;const b=names[t];if(!b)continue;const pb=PBLK[PK[i]];const a0=angOf(i);
   if(!pb){w(0,'CIRCLE');w(8,b+'_TRU');w(10,X(PX[i]));w(20,Y(PY[i]));w(30,0);w(40,0.5)}
   emitPoleLamp(i,(blk,lay,x,y,a)=>ins(blk,lay,x,y,a),b+(PK[i]>=4?'_TU':'_TRU'),b+'_DEN',1,a0,pb);
@@ -586,9 +587,9 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
  w(0,'LTYPE');w(2,'DASHED2');w(70,0);w(3,'Dashed (.5x) _ _ _ _');w(72,65);w(73,2);w(40,3.75);w(49,2.5);w(49,-1.25);
  w(0,'LTYPE');w(2,'DASHDOT');w(70,0);w(3,'Dash dot __ . __ .');w(72,65);w(73,4);w(40,12);w(49,7);w(49,-2);w(49,1);w(49,-2);w(0,'ENDTAB');
  w(0,'TABLE');w(2,'LAYER');w(70,LAY.length+1);w(0,'LAYER');w(2,'0');w(70,0);w(62,7);w(6,'CONTINUOUS');for(const[n,c,l]of LAY){w(0,'LAYER');w(2,n);w(70,0);w(62,c);w(6,l)}w(0,'ENDTAB');
- w(0,'TABLE');w(2,'STYLE');w(70,2);for(const[n,fn]of[['ARIAL','arial.ttf'],['VNI','VHELVEN.TTF']]){w(0,'STYLE');w(2,n);w(70,0);w(40,0);w(41,1);w(50,0);w(71,0);w(42,2.5);w(3,fn);w(4,'')}w(0,'ENDTAB');w(0,'ENDSEC');
+ w(0,'TABLE');w(2,'STYLE');w(70,3);for(const[n,fn]of[['STANDARD','arial.ttf'],['ARIAL','arial.ttf'],['VNI','VHELVEN.TTF']]){w(0,'STYLE');w(2,n);w(70,0);w(40,0);w(41,1);w(50,0);w(71,0);w(42,2.5);w(3,fn);w(4,'')}w(0,'ENDTAB');w(0,'ENDSEC');
  w(0,'SECTION');w(2,'BLOCKS');
- for(const[n,Sy]of Object.entries(SYMR)){w(0,'BLOCK');w(8,0);w(2,n);w(70,0);w(10,0);w(20,0);w(30,0);w(3,n);
+ for(const[n,Sy]of Object.entries(SYMR)){w(0,'BLOCK');w(8,0);w(2,BN(n));w(70,0);w(10,(Sy.ax||0).toFixed(4));w(20,(Sy.ay||0).toFixed(4));w(30,0);w(3,BN(n));
   for(const[fl,gr,p]of Sy.prims){const L=gr?'TTC':0;if(fl){const m=p.length/2;let qx=0,qy=0;for(let q=0;q<p.length;q+=2){qx+=p[q];qy+=p[q+1]}qx/=m;qy/=m;
     for(let q=0;q+3<p.length;q+=2){w(0,'SOLID');w(8,L);w(10,f(qx));w(20,f(qy));w(30,0);w(11,f(p[q]));w(21,f(p[q+1]));w(31,0);w(12,f(p[q+2]));w(22,f(p[q+3]));w(32,0);w(13,f(p[q+2]));w(23,f(p[q+3]));w(33,0)}}
    else{w(0,'POLYLINE');w(8,L);w(66,1);w(10,0);w(20,0);w(30,0);w(70,0);for(let q=0;q<p.length;q+=2){w(0,'VERTEX');w(8,L);w(10,f(p[q]));w(20,f(p[q+1]));w(30,0)}w(0,'SEQEND');w(8,L)}}
@@ -609,8 +610,8 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
  if(BASE){for(const[kind,lay]of[['edge','HTGT_LINE'],['tim','HT_GT_TIM'],['river','SONG_RACH'],['ward','RANH_PHUONG_MOI']])for(const o of BASE[kind])for(const r of rects){if(o.b[2]<r[0]||o.b[0]>r[2]||o.b[3]<r[1]||o.b[1]>r[3])continue;const res=[];clipPoly(o.p,r,res);for(const xs of res)pl(lay,xs,false)}
   for(const tx of BASE.text){if(!rects.some(r=>tx.x>=r[0]&&tx.x<=r[2]&&tx.y>=r[1]&&tx.y<=r[3]))continue;let a=tx.r*180/Math.PI;txt('TEN_DUONG',tx.x,tx.y,tx.h*Math.max(1,s),a,tx.s,1,2,'ARIAL')}}
  // đèn, trụ, cáp của tủ
- const ins=(blk,layer,x,y,a,sc)=>{const Sy=SYMR[blk],c=Math.cos(a),sn=Math.sin(a);const ix=x-(Sy.ax*c-Sy.ay*sn)*sc,iy=y-(Sy.ax*sn+Sy.ay*c)*sc;
-  w(0,'INSERT');w(8,layer);w(2,blk);w(10,X(ix));w(20,Y(iy));w(30,0);w(41,sc);w(42,sc);w(43,1);if(a)w(50,(((a*180/Math.PI)%360)+360)%360)};
+ const ins=(blk,layer,x,y,a,sc)=>{const Sy=SYMR[blk],c=Math.cos(a),sn=Math.sin(a);const ix=x,iy=y;
+  w(0,'INSERT');w(8,layer);w(2,BN(blk));w(10,X(ix));w(20,Y(iy));w(30,0);w(41,sc);w(42,sc);w(43,1);if(a)w(50,(((a*180/Math.PI)%360)+360)%360)};
  const ss=1;const inR=(x,y)=>rects.some(r=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3]);
  for(const sg of S){if(sg.tu!==t||sdel(sg)||sg.f===2)continue;const ty=stype(sg);
   for(const r of rects){const c=clipSeg(PX[sg.a],PY[sg.a],PX[sg.b],PY[sg.b],r);if(!c)continue;w(0,'LINE');w(8,ty?'CABLENOI':'02_CABLENGAM');w(10,X(c[0]));w(20,Y(c[1]));w(30,0);w(11,X(c[2]));w(21,Y(c[3]));w(31,0)}
