@@ -11,11 +11,11 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
 <style>
 :root{--bg:#f3f4f1;--panel:#ffffff;--fg:#1d2420;--mut:#5d6a63;--line:#dfe3de;--acc:#1f7a5a;--me:#2563eb;--glow:#f5b301;--acc-fg:#fff;--map:#eef0ea;--grid:#e1e4dc;
---ngam:#c021c9;--noi:#0896ab;--warn:#c4322f;--p-evn:#7b8580;--p-steel:#1d2420;--lamp:#1d2420;--lamp-tt:#16a34a;--sym-tt:#16a34a;--edge:#9aa39d;--tim:#c9cfc8;--river:#7fb3d9;--ranh:#b7a3c9;--road:#6b5a3a;--ward:#a0337a;--snap:#e8a400;--p-deco:#8a4fc2;--p-other:#b38a12;--sel:#e0218a;--chip:#eef2ee;--txt-halo:#eef0ea}
+--ngam:#c021c9;--noi:#0896ab;--warn:#c4322f;--p-evn:#7b8580;--p-steel:#1d2420;--lamp:#1d2420;--lamp-tt:#16a34a;--sym-tt:#16a34a;--edge:#9aa39d;--tim:#c9cfc8;--river:#7fb3d9;--ranh:#b7a3c9;--road:#6b5a3a;--ward:#b8641c;--snap:#e8a400;--p-deco:#8a4fc2;--p-other:#b38a12;--sel:#e0218a;--chip:#eef2ee;--txt-halo:#eef0ea}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121614;--panel:#1a201d;--fg:#e7ece8;--mut:#9aa69f;--line:#2c3430;--acc:#47b48a;--me:#60a5fa;--glow:#ffd24a;--acc-fg:#0d1210;--map:#151a18;--grid:#1f2623;
---ngam:#f062f5;--noi:#2fd6ee;--warn:#ff6b67;--p-evn:#9aa49f;--p-steel:#e7ece8;--lamp:#e7ece8;--lamp-tt:#4ade80;--sym-tt:#4ade80;--edge:#56605a;--tim:#2e3632;--river:#3a6a8f;--ranh:#6c5a80;--road:#cdb98f;--ward:#f08ac8;--snap:#ffc531;--p-deco:#c39af0;--p-other:#e2bb40;--sel:#ff5cb5;--chip:#232b27;--txt-halo:#151a18;color-scheme:dark}}
+--ngam:#f062f5;--noi:#2fd6ee;--warn:#ff6b67;--p-evn:#9aa49f;--p-steel:#e7ece8;--lamp:#e7ece8;--lamp-tt:#4ade80;--sym-tt:#4ade80;--edge:#56605a;--tim:#2e3632;--river:#3a6a8f;--ranh:#6c5a80;--road:#cdb98f;--ward:#e3a066;--snap:#ffc531;--p-deco:#c39af0;--p-other:#e2bb40;--sel:#ff5cb5;--chip:#232b27;--txt-halo:#151a18;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#121614;--panel:#1a201d;--fg:#e7ece8;--mut:#9aa69f;--line:#2c3430;--acc:#47b48a;--me:#60a5fa;--glow:#ffd24a;--acc-fg:#0d1210;--map:#151a18;--grid:#1f2623;
---ngam:#f062f5;--noi:#2fd6ee;--warn:#ff6b67;--p-evn:#9aa49f;--p-steel:#e7ece8;--lamp:#e7ece8;--lamp-tt:#4ade80;--sym-tt:#4ade80;--edge:#56605a;--tim:#2e3632;--river:#3a6a8f;--ranh:#6c5a80;--road:#cdb98f;--ward:#f08ac8;--snap:#ffc531;--p-deco:#c39af0;--p-other:#e2bb40;--sel:#ff5cb5;--chip:#232b27;--txt-halo:#151a18;color-scheme:dark}
+--ngam:#f062f5;--noi:#2fd6ee;--warn:#ff6b67;--p-evn:#9aa49f;--p-steel:#e7ece8;--lamp:#e7ece8;--lamp-tt:#4ade80;--sym-tt:#4ade80;--edge:#56605a;--tim:#2e3632;--river:#3a6a8f;--ranh:#6c5a80;--road:#cdb98f;--ward:#e3a066;--snap:#ffc531;--p-deco:#c39af0;--p-other:#e2bb40;--sel:#ff5cb5;--chip:#232b27;--txt-halo:#151a18;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:"Be Vietnam Pro",system-ui,"Segoe UI",Arial,sans-serif;font-size:13px;margin:0;overflow:hidden}
@@ -167,12 +167,36 @@ details.fold[open]>summary{border-bottom:1px solid var(--line);border-radius:12p
 .qt.open{box-shadow:0 0 0 2px var(--qc) inset}
 .qt.open b::after{content:" ▾";font-size:10px}
 .tubox .row .btn{padding:5px 9px;font-size:12px}
-.emptyhint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none;display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;max-width:min(360px,80%);padding:14px 18px;border-radius:14px;background:color-mix(in srgb,var(--panel) 90%,transparent);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:12.5px;color:var(--mut)}
+.emptyhint-unused{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none;display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;max-width:min(360px,80%);padding:14px 18px;border-radius:14px;background:color-mix(in srgb,var(--panel) 90%,transparent);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:12.5px;color:var(--mut)}
 .emptyhint b{font-size:14px;color:var(--fg)}
 .lampbox{display:flex;flex-direction:column;gap:6px;padding:10px;margin-bottom:6px;border-radius:10px;border:1px solid var(--sel,var(--acc));background:color-mix(in srgb,var(--acc) 8%,var(--panel))}
 .lampbox h4{margin:0;font-size:13px;font-weight:600}
 .btn.kb{display:inline-flex;align-items:center;gap:5px}.btn.kb svg{overflow:visible}
 .btn.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,var(--line))}
+
+/* ---- giao diện chuyên nghiệp: thanh công cụ, thanh trạng thái, nút phóng ---- */
+.cadbar{gap:4px;padding:5px max(10px,env(safe-area-inset-right,0px)) 5px 10px;box-shadow:0 1px 0 var(--line)}
+.cadbar .grp{gap:1px;padding-right:4px;margin-right:2px}
+.tb{min-width:50px;padding:5px 6px 4px;gap:3px;border-radius:7px;color:var(--fg)}
+.tb .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tb span{font-size:10.5px;letter-spacing:.01em}
+.tb.on{color:var(--acc)}
+.mapui{gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.mapui .btn{border:0;border-radius:0;box-shadow:none;width:34px;height:34px;font-size:17px;background:var(--panel)}
+.mapui .btn+.btn{border-top:1px solid var(--line)}
+.mapui .btn:hover{background:var(--chip)}
+.sbar{position:absolute;left:0;right:0;bottom:0;height:30px;padding:0 max(10px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) 10px;display:flex;align-items:center;gap:12px;background:color-mix(in srgb,var(--panel) 94%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(6px);font-size:11.5px;z-index:3}
+.sbar .scale,.sbar .coord,.sbar .save{position:static;background:none;border:0;padding:0;border-radius:0;box-shadow:none;width:auto;max-width:none;white-space:nowrap}
+.sbar .scale{color:var(--fg);min-width:110px}
+.sbar .save{color:var(--mut);overflow:hidden;text-overflow:ellipsis;max-width:30%}
+.sbar .save:empty{display:none}
+.sbar .coord{margin-left:auto;color:var(--mut);font-variant-numeric:tabular-nums}
+.sbar .cmdrow{flex:1;min-width:120px;max-width:560px;margin:0 auto;height:22px;padding:0 8px;border-radius:6px;background:var(--bg);font-family:Consolas,"Cascadia Mono",monospace;font-size:11.5px}
+.cmdlog{position:absolute;left:50%;transform:translateX(-50%);bottom:40px;max-width:min(620px,calc(100% - 120px));padding:6px 12px;border-radius:8px;background:var(--panel);border:1px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,.2);font-size:12px;color:var(--fg);z-index:3;transition:opacity .4s}
+.cmdlog.fade{opacity:0}
+.cmdlog:empty{display:none}
+.mapwrap canvas{bottom:30px;height:calc(100% - 30px)}
+@media (max-width:760px){.sbar{gap:8px;font-size:11px}.sbar .coord,.sbar .save{display:none}.sbar .cmdrow{max-width:none}.cmdlog{bottom:38px}}
 </style>
 <div class="app">
 <aside id="side">
@@ -225,15 +249,15 @@ details.fold[open]>summary{border-bottom:1px solid var(--line);border-radius:12p
   <div class="sec"><h2>Xuất dữ liệu</h2>
    <div class="row"><button class="btn pri" id="exSheet" disabled>Bản vẽ khung – tủ đang chọn</button><button class="btn" id="exSheets" disabled>Bản vẽ khung – các tủ đang bật</button><button class="btn" id="exDxf" disabled>DXF tổng (.zip)</button><button class="btn" id="exCsv" disabled>Bảng cáp (.csv)</button><button class="btn" id="exPole" disabled>Bảng tọa độ trụ (.csv)</button></div>
    <div class="row" id="exIO" hidden style="margin-top:6px"><button class="btn" id="exEd">Xuất chỉnh sửa (.json)</button><label class="btn" style="display:inline-flex;align-items:center">Nhập chỉnh sửa<input type="file" id="imEd" accept=".json" hidden></label></div>
-   <p class="note" id="exNote">Bản vẽ khung: tỉ lệ 1/1000 theo khung mẫu (khung tên, bảng ký hiệu, chú thích), có nền bản đồ trong khung; tủ lớn tự chia nhiều bản. Tất cả các bản được gộp trong 1 file DXF (mỗi tủ một hàng). Cáp nổi: lớp CABLENOI nét liền màu cyan; cáp ngầm: lớp 02_CABLENGAM nét đứt DASHED2 màu hồng, nét dày 0,3 như mẫu.</p></div>
+   <p class="note" id="exNote">Bản vẽ khung tỉ lệ 1/1000 theo khung mẫu, gộp tất cả các bản vào 1 file DXF.</p></div>
  </div>
 </aside>
 <main>
 <div class="cadbar" role="toolbar" aria-label="Công cụ vẽ">
-  <div class="grp"><button class="tb" data-tool="sel" title="Chọn (Esc)">⬚<span>Chọn</span></button><button class="tb" data-tool="move" title="Dời – lệnh M">✥<span>Dời</span></button><button class="tb" data-tool="rot" title="Xoay – lệnh RO">⟳<span>Xoay</span></button></div>
-  <div class="grp"><button class="tb" data-tool="pole" title="Thêm trụ – lệnh TR">⊕<span>Trụ</span></button><button class="tb" data-tool="cab" title="Thêm tủ – lệnh TU">▭<span>Tủ</span></button><button class="tb" data-tool="noi" title="Vẽ cáp nổi – lệnh CN">╱<span>Cáp nổi</span></button><button class="tb" data-tool="ngam" title="Vẽ cáp ngầm – lệnh CG">┄<span>Cáp ngầm</span></button></div>
-  <div class="grp"><button class="tb" data-tool="erase" title="Xóa – lệnh E / phím Delete">✕<span>Xóa</span></button><button class="tb" data-tool="dist" title="Đo khoảng cách – lệnh DI">↔<span>Đo</span></button><button class="tb on" id="bSnapT" title="Bắt điểm vào trụ – F3">⌖<span>Bắt điểm</span></button></div>
-  <div class="grp"><button class="tb" id="bUndo" title="Hoàn tác – Ctrl+Z">↶<span>Hoàn tác</span></button><button class="tb" id="bRedo" title="Làm lại – Ctrl+Y">↷<span>Làm lại</span></button></div>
+  <div class="grp"><button class="tb" data-tool="sel" title="Chọn (Esc)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 1.5L10 19z"/></svg><span>Chọn</span></button><button class="tb" data-tool="move" title="Dời – lệnh M"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg><span>Dời</span></button><button class="tb" data-tool="rot" title="Xoay – lệnh RO"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg><span>Xoay</span></button></div>
+  <div class="grp"><button class="tb" data-tool="pole" title="Thêm trụ – lệnh TR"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 5v14M5 12h14"/></svg><span>Trụ</span></button><button class="tb" data-tool="cab" title="Thêm tủ – lệnh TU"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="10" rx="1.5"/></svg><span>Tủ</span></button><button class="tb" data-tool="noi" title="Vẽ cáp nổi – lệnh CN"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18L20 6"/></svg><span>Cáp nổi</span></button><button class="tb" data-tool="ngam" title="Vẽ cáp ngầm – lệnh CG"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l3-2.2M10 13.6l4-3M17 8.4l3-2.4"/></svg><span>Cáp ngầm</span></button></div>
+  <div class="grp"><button class="tb" data-tool="erase" title="Xóa – lệnh E / phím Delete"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Xóa</span></button><button class="tb" data-tool="dist" title="Đo khoảng cách – lệnh DI"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span>Đo</span></button><button class="tb on" id="bSnapT" title="Bắt điểm vào trụ – F3"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg><span>Bắt điểm</span></button></div>
+  <div class="grp"><button class="tb" id="bUndo" title="Hoàn tác – Ctrl+Z"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12"/></svg><span>Hoàn tác</span></button><button class="tb" id="bRedo" title="Làm lại – Ctrl+Y"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 7l5 5-5 5"/><path d="M20 12H10a6 6 0 0 0 0 12"/></svg><span>Làm lại</span></button></div>
   <div class="grp savegrp"><button class="btn" id="bDiscard" hidden>Hủy thay đổi</button><button class="btn" id="bSave" title="Lưu lên bản đồ – Ctrl+S">Đã cập nhật</button></div>
  </div>
  <div class="newopt" id="newOpt" hidden><label>Loại trụ <select id="newKind"><option value="1">Trụ STK</option><option value="0">Trụ BTLT</option><option value="2">Trụ trang trí</option><option value="6">Trụ treo cáp – TTC</option><option value="3">Không trụ vật lý</option></select></label>
@@ -244,12 +268,10 @@ details.fold[open]>summary{border-bottom:1px solid var(--line);border-radius:12p
   <label>Liên kết tủ / trụ cần tăng cường <input id="newLink" list="tuList" type="text" placeholder="Gõ tên tủ hoặc tên trụ…" autocomplete="off"><datalist id="tuList"></datalist></label><span class="note" id="newLinkMsg"></span>
   <label>Thuộc tủ <select id="newTu"><option value="auto">Tự động (theo trụ gần nhất)</option></select></label></div>
  <div class="mapwrap">
-  <div class="emptyhint" id="emptyHint" hidden><b>Chưa hiển thị tủ nào</b><span>Chọn quận và bật tủ ở bảng bên trái, tìm trụ / tủ, hoặc bấm Định vị để hiện tủ gần bạn.</span></div>
  <canvas id="cv"></canvas>
- <div class="mapui"><button class="btn" id="zin" aria-label="Phóng to">+</button><button class="btn" id="zout" aria-label="Thu nhỏ">−</button><button class="btn" id="zfit" aria-label="Xem toàn bộ">⤢</button></div>
- <div class="save" id="saveSt"></div>
- <div class="cmd"><div class="cmdlog" id="cmdLog"></div><label class="cmdrow"><span id="cmdP">Lệnh:</span><input id="cmdIn" type="text" autocomplete="off" spellcheck="false" aria-label="Dòng lệnh" placeholder="Gõ lệnh…"></label></div>
- <div class="scale" id="scale"></div><div class="coord" id="coord"></div>
+ <div class="mapui" role="group" aria-label="Thu phóng"><button class="btn" id="zin" aria-label="Phóng to">+</button><button class="btn" id="zout" aria-label="Thu nhỏ">−</button><button class="btn" id="zfit" aria-label="Xem toàn bộ">⤢</button></div>
+ <div class="cmdlog" id="cmdLog" aria-live="polite"></div>
+ <div class="sbar"><div class="scale" id="scale"></div><div class="save" id="saveSt"></div><label class="cmdrow"><span id="cmdP">Lệnh:</span><input id="cmdIn" type="text" autocomplete="off" spellcheck="false" aria-label="Dòng lệnh" placeholder="Gõ lệnh…"></label><div class="coord" id="coord"></div></div>
 </div>
 </main>
 </div>
@@ -480,14 +502,17 @@ fetch('base.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(b=>{const de
 function drawBase(g,x0,y0,x1,y1){if(!BASE||!opt.base)return;
  const L=(arr,col,w,dash,minK)=>{if(k<minK)return;g.strokeStyle=col;g.lineWidth=w;g.setLineDash(dash);g.beginPath();
   for(const o of arr){const b=o.b;if(b[2]<x0||b[0]>x1||b[3]<y0||b[1]>y1)continue;const p=o.p;g.moveTo(sx(p[0]),sy(p[1]));for(let q=2;q<p.length;q+=2)g.lineTo(sx(p[q]),sy(p[q+1]))}g.stroke();g.setLineDash([])};
- L(BASE.river,C.river,1.2,[],0);L(BASE.tim,C.tim,1,[6,4],0.6);L(BASE.edge,C.edge,k>2?1.2:0.8,[],0.05);L(BASE.ward,C.ward,k>1?3:2,[12,5,3,5],0);
+ L(BASE.river,C.river,1.2,[],0);L(BASE.tim,C.tim,1,[6,4],0.6);L(BASE.edge,C.edge,k>2?1.2:0.8,[],0.05);g.globalAlpha=.75;L(BASE.ward,C.ward,k>1?2:1.3,[10,4,2,4],0);g.globalAlpha=1;
  g.textAlign='center';g.textBaseline='middle';
  if(opt.road)for(const t of BASE.text){if(t.x<x0||t.x>x1||t.y<y0||t.y>y1)continue;const px=t.h*k;if(px<7)continue;const fs=Math.min(px,20);
   g.save();g.translate(sx(t.x),sy(t.y));let r=-t.r;if(Math.cos(r)<0)r+=Math.PI;g.rotate(r);g.font=`500 ${fs}px Arial,"Be Vietnam Pro",sans-serif`;
   g.fillStyle=t.k==='rtext'?C.river:C.road;g.lineWidth=3;g.strokeStyle=C['txt-halo'];g.strokeText(t.s,0,0);g.fillText(t.s,0,0);g.restore()}
- if(k<1.5)for(const t of BASE.wtext){g.font=`700 ${k<0.12?13:16}px "Be Vietnam Pro",sans-serif`;g.lineWidth=4;g.strokeStyle=C['txt-halo'];g.strokeText(t.s.toUpperCase(),sx(t.x),sy(t.y));g.fillStyle=C.ward;g.fillText(t.s.toUpperCase(),sx(t.x),sy(t.y))}}
+ if(k>=0.06&&k<1.5){const placed=[];g.font=`600 ${k<0.2?10.5:12}px "Be Vietnam Pro",sans-serif`;g.textAlign='center';g.textBaseline='middle';
+  for(const t of BASE.wtext){const X=sx(t.x),Y=sy(t.y);if(X<-50||X>W+50||Y<-20||Y>H+20)continue;const s=t.s.replace(/^Phường /,'').toUpperCase(),wd=g.measureText(s).width+8,bx=[X-wd/2,Y-9,X+wd/2,Y+9];
+   if(placed.some(b=>b[0]<bx[2]&&bx[0]<b[2]&&b[1]<bx[3]&&bx[1]<b[3]))continue;placed.push(bx);
+   g.lineWidth=3;g.strokeStyle=C['txt-halo'];g.strokeText(s,X,Y);g.fillStyle=C.ward;g.globalAlpha=.9;g.fillText(s,X,Y);g.globalAlpha=1}}}
 let lastS=2.4;
-function render(){raf=0;{const eh=$('emptyHint');if(eh)eh.hidden=curQ>=0||vis.some(v=>v)}const g=g0;g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=C.map;g.fillRect(0,0,W,H);
+function render(){raf=0;const g=g0;g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=C.map;g.fillRect(0,0,W,H);
  const x0=wx(0),x1=wx(W),y0=wy(H),y1=wy(0);
  const gs=niceStep(80/k);g.strokeStyle=C.grid;g.lineWidth=1;g.beginPath();
  for(let x=Math.ceil((x0+D.X0)/gs)*gs-D.X0;x<x1;x+=gs){const X=Math.round(sx(x))+.5;g.moveTo(X,0);g.lineTo(X,H)}
@@ -543,7 +568,7 @@ const TOOLS={me:'Vị trí của tôi',sel:'Chọn',move:'Dời (M)',rot:'Xoay (
 const PROMPT={me:'Chạm vào bản đồ tại chỗ bạn đang đứng (Esc: hủy):',sel:'Chọn đối tượng · gõ lệnh: TR, TU, CN, CG, M, RO, E, DI, U, S',move:'Chọn trụ cần dời:',rot:'Chọn trụ cần xoay:',pole:'Chạm vị trí đặt trụ mới (Esc: kết thúc):',cab:'Chạm vị trí đặt tủ điều khiển:',noi:'Chọn trụ/tủ bắt đầu cáp nổi:',ngam:'Chọn trụ/tủ bắt đầu cáp ngầm:',erase:'Chọn trụ hoặc đoạn cáp cần xóa:',dist:'Chọn điểm thứ nhất:'};
 function setTool(t){if(!canWrite&&!['sel','dist','me'].includes(t)){cmdMsg('Bạn chỉ có quyền xem');t='sel'}tool=t;T={};for(const b of document.querySelectorAll('[data-tool]'))b.classList.toggle('on',b.dataset.tool===t);
  $('cmdP').textContent=PROMPT[t];cv.style.cursor=t==='sel'?'':'crosshair';$('newOpt').hidden=!(t==='pole'||t==='cab');if(typeof renderPal==='function'&&$('pal'))renderPal();draw()}
-function cmdMsg(m){$('cmdLog').textContent=m}
+let cmT=0;function cmdMsg(m){const el=$('cmdLog');el.classList.remove('fade');el.textContent=m;clearTimeout(cmT);if(m)cmT=setTimeout(()=>{el.classList.add('fade');setTimeout(()=>{if(el.classList.contains('fade'))el.textContent=''},450)},6000)}
 function hitPole(X,Y,R=14){let best=-1,bd=R;for(let i=0;i<N;i++){if(!pv(i))continue;const d=Math.hypot(sx(PX[i])-X,sy(PY[i])-Y);if(d<bd){bd=d;best=i}}return best}
 function hitSeg(X,Y,R=8){let bs=-1,bd=R;for(let j=0;j<S.length;j++){const s=S[j];if(!pv(s.a)||sdel(s))continue;if(s.f===2&&!opt.long)continue;if(s.f===1&&!opt.br)continue;
  const ax=sx(PX[s.a]),ay=sy(PY[s.a]),bx=sx(PX[s.b]),by=sy(PY[s.b]);const vx=bx-ax,vy=by-ay,L=vx*vx+vy*vy;if(!L)continue;let t=((X-ax)*vx+(Y-ay)*vy)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(ax+t*vx-X,ay+t*vy-Y);if(d<bd){bd=d;bs=j}}return bs}
