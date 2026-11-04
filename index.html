@@ -167,6 +167,12 @@ details.fold[open]>summary{border-bottom:1px solid var(--line);border-radius:12p
 .qt.open{box-shadow:0 0 0 2px var(--qc) inset}
 .qt.open b::after{content:" ▾";font-size:10px}
 .tubox .row .btn{padding:5px 9px;font-size:12px}
+.emptyhint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none;display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;max-width:min(360px,80%);padding:14px 18px;border-radius:14px;background:color-mix(in srgb,var(--panel) 90%,transparent);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:12.5px;color:var(--mut)}
+.emptyhint b{font-size:14px;color:var(--fg)}
+.lampbox{display:flex;flex-direction:column;gap:6px;padding:10px;margin-bottom:6px;border-radius:10px;border:1px solid var(--sel,var(--acc));background:color-mix(in srgb,var(--acc) 8%,var(--panel))}
+.lampbox h4{margin:0;font-size:13px;font-weight:600}
+.btn.kb{display:inline-flex;align-items:center;gap:5px}.btn.kb svg{overflow:visible}
+.btn.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,var(--line))}
 </style>
 <div class="app">
 <aside id="side">
@@ -238,6 +244,7 @@ details.fold[open]>summary{border-bottom:1px solid var(--line);border-radius:12p
   <label>Liên kết tủ / trụ cần tăng cường <input id="newLink" list="tuList" type="text" placeholder="Gõ tên tủ hoặc tên trụ…" autocomplete="off"><datalist id="tuList"></datalist></label><span class="note" id="newLinkMsg"></span>
   <label>Thuộc tủ <select id="newTu"><option value="auto">Tự động (theo trụ gần nhất)</option></select></label></div>
  <div class="mapwrap">
+  <div class="emptyhint" id="emptyHint" hidden><b>Chưa hiển thị tủ nào</b><span>Chọn quận và bật tủ ở bảng bên trái, tìm trụ / tủ, hoặc bấm Định vị để hiện tủ gần bạn.</span></div>
  <canvas id="cv"></canvas>
  <div class="mapui"><button class="btn" id="zin" aria-label="Phóng to">+</button><button class="btn" id="zout" aria-label="Thu nhỏ">−</button><button class="btn" id="zfit" aria-label="Xem toàn bộ">⤢</button></div>
  <div class="save" id="saveSt"></div>
@@ -329,13 +336,16 @@ const pe=i=>NEW[i]?ED[PT[i]].np[ID(i)]:ED[PT[i]].p[ID(i)];
 // bộ đèn + cần đèn theo file thống kê (bộ đèn.xlsx, cần đèn.xlsx) – gắn theo Mã trụ, tính vào tủ điều khiển
 const LM=JSON.parse(document.getElementById('lamps').textContent),C2T={L:'LED',H:'HPS',M:'MH',T:'TT'};
 function lampList(i){const e=pe(i);const d=(!NEW[i]&&LM.p[i])||null;
+ if(e&&Array.isArray(e.lts)&&!e.lt)return e.lts.slice();
  if(e&&e.lt){if(e.lt==='NONE')return[];const n=e.nl||(d&&d[0].length)||nLamp0(i);return Array(Math.max(1,n)).fill(e.lt)}
  if(d){let c=[...d[0]].map(x=>C2T[x]||null);const kn=c.find(x=>x);c=c.map(x=>x||kn||'LED');if(e&&e.nl){while(c.length<e.nl)c.push(c[c.length-1]||'LED');c=c.slice(0,e.nl)}return c}
  if(ISCAB(PK[i]))return[];const lt=PK[i]===2?'TT':'LED';return Array((e&&e.nl)||nLamp0(i)).fill(lt)}
-function lampDraw(i){const L=lampList(i);if(!L.length)return[];if(L.every(t=>t==='TT'))return[['TT',0]];const A=[0,Math.PI,Math.PI/2,-Math.PI/2];return L.filter(t=>t!=='TT').slice(0,4).map((t,m)=>[t,A[m]])}
+function lampDraw(i){const L=lampList(i);if(!L.length)return[];if(L.every(t=>t==='TT'))return[['TT',0,0]];const A=[0,Math.PI,Math.PI/2,-Math.PI/2];return L.map((t,ix)=>[t,ix]).filter(x=>x[0]!=='TT').slice(0,4).map((x,m)=>[x[0],A[m],x[1]])}
 const lampT=i=>{const L=lampList(i);if(!L.length)return'NONE';const c={};for(const t of L)c[t]=(c[t]||0)+1;return Object.keys(c).sort((a,b)=>c[b]-c[a])[0]};
+const labAng=i=>{const LD=lampDraw(i);return angOf(i)+(LD.some(x=>Math.abs(x[1]-Math.PI)<0.01)?(LD.some(x=>Math.abs(x[1]-Math.PI/2)<0.01)?-Math.PI*0.75:Math.PI/2):Math.PI)};
 function lampDesc(i){const e=pe(i)||{};const d=(!NEW[i]&&LM.p[i])||null;let s='';
- if(e.lt)s=(e.lt==='NONE'?'Không có đèn':LTN[e.lt]+(nLamp(i)>1?' × '+nLamp(i):''))+' <small class="tag">chỉnh tay</small>';
+if(!e.lt&&Array.isArray(e.lts))s=(e.lts.length?e.lts.map(t=>LTN[t]).join(', '):'Không có đèn')+' <small class="tag">chỉnh từng bộ</small>';
+ else if(e.lt)s=(e.lt==='NONE'?'Không có đèn':LTN[e.lt]+(nLamp(i)>1?' × '+nLamp(i):''))+' <small class="tag">chỉnh tay</small>';
  else if(d&&d[0].length){const c={};[...d[0]].forEach((x,k)=>{const w=LM.W[d[1][k]]||LTN[C2T[x]]||'Chưa rõ loại';c[w]=(c[w]||0)+1});s=Object.entries(c).map(([w,n])=>(n>1?n+' × ':'')+esc(w)).join(', ')}
  else if(d)s='Không có đèn (theo file bộ đèn)';
  else s=LTN[lampT(i)]+(nLamp(i)>1?' × '+nLamp(i):'')+' <small class="tag">mặc định</small>';
@@ -398,10 +408,11 @@ const GEO=(()=>{const a=6378137,f=1/298.257223563,e2=f*(2-f),ep2=e2/(1-e2),R=Mat
  return{toVN,toWGS}})();
 window.__GEO=GEO;
 // ---------- visibility & selection
-const vis=new Uint8Array(nT).fill(1);let wardF=-1;
+/* mở app: chưa hiện tủ nào, người dùng chọn mới hiện */const vis=new Uint8Array(nT).fill(0);let wardF=-1;
 const pv=i=>!DEL[i]&&vis[PT[i]]&&(wardF<0||PW[i]===wardF);
 let selP=-1,selS=-1,selT=-1,coordOpen=false;
-function clearSel(){selP=selS=-1;$('infoSec').hidden=true}
+let selL=null;
+function clearSel(){selP=selS=-1;selL=null;$('infoSec').hidden=true}
 const cntOf=t=>{let n=0;for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])n++;return n};
 function stats(t){let n=cntOf(t),ng=0,no=0,lg=0;for(const s of S){if(s.tu!==t||sdel(s))continue;if(s.f===2){lg++;continue}const L=slen(s);stype(s)?no+=L:ng+=L}return{n,ng,no,lg}}
 $('sum').textContent=`${N0.toLocaleString('vi-VN')} trụ · ${nT} tủ · ${S0.length.toLocaleString('vi-VN')} đoạn cáp · ${WARDS.filter(w=>!w.startsWith('(')).length} phường mới`;
@@ -424,7 +435,7 @@ function setMe(x,y,acc,src){ME={x,y,acc,src,at:new Date()};nearTu();draw()}
 function nearTu(){if(!ME)return;const best=new Map();
  for(let i=0;i<N;i++){if(DEL[i])continue;const d=Math.hypot(PX[i]-ME.x,PY[i]-ME.y),t=PT[i],b=best.get(t);if(!b||d<b.d)best.set(t,{d,i})}
  for(const s of S){if(s.f===2||sdel(s))continue;const d=segD(ME.x,ME.y,PX[s.a],PY[s.a],PX[s.b],PY[s.b]);const b=best.get(s.tu);if(b&&d<b.d)best.set(s.tu,{d,i:b.i,c:1})}
- const L=[...best].sort((a,b)=>a[1].d-b[1].d).slice(0,6);NEAR.clear();const IN=L.filter(([t,v])=>v.d<=30);IN.forEach(([t])=>NEAR.add(t));
+ const L=[...best].sort((a,b)=>a[1].d-b[1].d).slice(0,6);NEAR.clear();const IN=L.filter(([t,v])=>v.d<=30);IN.forEach(([t])=>NEAR.add(t));(IN.length?IN:L.slice(0,1)).forEach(([t])=>vis[t]=1);
  const el=$('locOut');el.hidden=false;const ll=GEO.toWGS(ME.x+D.X0,ME.y+D.Y0);
  const head=!L.length?'Chưa có tủ nào gần vị trí này':IN.length?`Bạn đang trong phạm vi <b>${IN.length}</b> tủ`:`Ngoài phạm vi tủ – tủ gần nhất cách <b>${fmt(L[0][1].d,0)} m</b>`;
  el.innerHTML=`<div class="lochd"><span class="pin" aria-hidden="true"></span><div><div>${head}</div><small>${esc(ME.src)} · ${ll.map(v=>v.toFixed(6)).join(', ')}${ME.acc?` · sai số ±${fmt(ME.acc,0)} m`:''}</small></div></div>
@@ -472,7 +483,7 @@ function drawBase(g,x0,y0,x1,y1){if(!BASE||!opt.base)return;
   g.fillStyle=t.k==='rtext'?C.river:C.road;g.lineWidth=3;g.strokeStyle=C['txt-halo'];g.strokeText(t.s,0,0);g.fillText(t.s,0,0);g.restore()}
  if(k<1.5)for(const t of BASE.wtext){g.font=`700 ${k<0.12?13:16}px "Be Vietnam Pro",sans-serif`;g.lineWidth=4;g.strokeStyle=C['txt-halo'];g.strokeText(t.s.toUpperCase(),sx(t.x),sy(t.y));g.fillStyle=C.ward;g.fillText(t.s.toUpperCase(),sx(t.x),sy(t.y))}}
 let lastS=2.4;
-function render(){raf=0;const g=g0;g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=C.map;g.fillRect(0,0,W,H);
+function render(){raf=0;{const eh=$('emptyHint');if(eh)eh.hidden=vis.some(v=>v)}const g=g0;g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=C.map;g.fillRect(0,0,W,H);
  const x0=wx(0),x1=wx(W),y0=wy(H),y1=wy(0);
  const gs=niceStep(80/k);g.strokeStyle=C.grid;g.lineWidth=1;g.beginPath();
  for(let x=Math.ceil((x0+D.X0)/gs)*gs-D.X0;x<x1;x+=gs){const X=Math.round(sx(x))+.5;g.moveTo(X,0);g.lineTo(X,H)}
@@ -500,11 +511,12 @@ function render(){raf=0;const g=g0;g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=C
    if(NEW[i]){g.strokeStyle=C.acc;g.setLineDash([3,2]);g.lineWidth=1;g.beginPath();g.arc(X,Y,1.9*s,0,6.2832);g.stroke();g.setLineDash([])}}}
  const rr=sym?1.8*s:3;
  if(selT>=0&&vis[selT]){g.strokeStyle=C.sel;g.lineWidth=1.5;g.beginPath();for(let i=0;i<N;i++){if(PT[i]!==selT||!pv(i)||!inV(i))continue;const X=sx(PX[i]),Y=sy(PY[i]);g.moveTo(X+rr+2.5,Y);g.arc(X,Y,rr+2.5,0,6.2832)}g.stroke()}
+ if(selL&&!DEL[selL[0]]){const c=lampCenter(selL[0],selL[1]);if(c){g.strokeStyle=C.sel;g.lineWidth=2.5;g.setLineDash([4,3]);g.beginPath();g.arc(sx(c[0]),sy(c[1]),Math.max(10,(c[2]+0.8)*lastS),0,6.2832);g.stroke();g.setLineDash([])}}
  if(selP>=0&&!DEL[selP]){const X=sx(PX[selP]),Y=sy(PY[selP]);g.strokeStyle=C.sel;g.lineWidth=3;g.beginPath();g.arc(X,Y,rr+5,0,6.2832);g.stroke();
   if(sym&&canWrite){const h=handle(selP);g.fillStyle=C.sel;g.beginPath();g.arc(h[0],h[1],7,0,6.2832);g.fill();g.fillStyle=C.map;g.beginPath();g.arc(h[0],h[1],3,0,6.2832);g.fill()}}
  if(opt.lab&&k>=1.6){const full=k>=3.2;g.font=`600 ${full?11.5:10.5}px "Be Vietnam Pro",system-ui,sans-serif`;g.textAlign='left';g.textBaseline='middle';
   for(let i=0;i<N;i++){if(!pv(i)||!inV(i))continue;let t=P[i][0];if(!full){const m=t.match(/(\d+)\s*$/);t=m?m[1]:t}
-   const a=angOf(i)+Math.PI,X=sx(PX[i])+Math.cos(a)*(rr+10)-(Math.cos(a)<0?g.measureText(t).width:0),Y=sy(PY[i])-Math.sin(a)*(rr+10);
+   const a=labAng(i),X=sx(PX[i])+Math.cos(a)*(rr+10)-(Math.cos(a)<0?g.measureText(t).width:0),Y=sy(PY[i])-Math.sin(a)*(rr+10);
    g.lineWidth=3;g.strokeStyle=C['txt-halo'];g.strokeText(t,X,Y);g.fillStyle=C.fg;g.fillText(t,X,Y)}}
  if(opt.sn&&k>=2.2){g.font='500 10.5px "Be Vietnam Pro",system-ui,sans-serif';g.textAlign='center';g.textBaseline='top';
   for(let i=0;i<N;i++){if(!pv(i)||!inV(i))continue;const r=snLabel(i);if(!r)continue;if(r.k==='seg'&&k<3.5&&!(pe(i)||{}).mid)continue;const t=r.k==='seg'?r.t.replace(/^Đoạn /,'↔ ').replace(/ → /,'–').replace(/\s+\D.*$/,''):r.t,X=sx(PX[i]),Y=sy(PY[i])+rr+4;
@@ -590,6 +602,7 @@ const up=e=>{ptrs.delete(e.pointerId);if(!ptrs.size)cv.classList.remove('drag');
   selectPole(d.i);return}
  drag=null;if(moved||e.type!=='pointerup'||e.button!==0||panBtn)return;
  if(tool!=='sel'){toolClick(e.offsetX,e.offsetY);return}
+ const hl=hitLamp(e.offsetX,e.offsetY);if(hl){selectLamp(hl[0],hl[1]);return}
  const i=hitPole(e.offsetX,e.offsetY,12);if(i>=0){selectPole(i);return}const j=hitSeg(e.offsetX,e.offsetY);if(j>=0)selectSeg(j);else{clearSel();draw()}};
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 function zoomAt(X,Y,f){const a=wx(X),b=wy(Y);k=Math.max(0.005,Math.min(80,k*f));cx=a-(X-W/2)/k;cy=b+(Y-H/2)/k;draw()}
@@ -626,7 +639,26 @@ document.addEventListener('keydown',e=>{const tg=e.target;const typing=tg.tagNam
  if(e.key==='Delete'&&tg.id!=='cmdIn'&&canWrite){if(selP>=0)erasePole(selP);else if(selS>=0)eraseSeg(selS);return}
  if(tg.id!=='cmdIn'&&e.key.length===1&&/[a-zA-Z0-9@.\-]/.test(e.key)&&!e.ctrlKey&&!e.metaKey&&!e.altKey){$('cmdIn').focus()}});
 // ---------- info panels
-function selectPole(i,zoom){if(i==null||i<0)return;selP=i;selS=-1;const p=P[i],e=pe(i)||{};$('infoSec').hidden=false;const lt=lampT(i);const isNew=NEW[i];
+// chọn riêng từng bộ đèn trên bản đồ để đổi ký hiệu
+function lampCenter(i,ix){const d=lampDraw(i).find(x=>x[2]===ix);if(!d)return null;const a=angOf(i)+d[1];const r=d[0]==='TT'?2.75:4.75;return[PX[i]+Math.cos(a)*r,PY[i]+Math.sin(a)*r,d[0]==='TT'?1.6:2.6]}
+function hitLamp(X,Y){if(!opt.lamp||k<0.9)return null;let best=null,bd=1e9;const R0=Math.max(9,2.4*lastS);
+ for(let i=0;i<N;i++){if(!pv(i))continue;const px=sx(PX[i]),py=sy(PY[i]);if(Math.abs(px-X)>8*lastS+20||Math.abs(py-Y)>8*lastS+20)continue;
+  if(Math.hypot(px-X,py-Y)<Math.max(8,1.3*lastS))continue; // bấm vào thân trụ -> chọn trụ
+  for(const d of lampDraw(i)){const c=lampCenter(i,d[2]);if(!c)continue;const dd=Math.hypot(sx(c[0])-X,sy(c[1])-Y);if(dd<R0&&dd<bd){bd=dd;best=[i,d[2]]}}}return best}
+function selectLamp(i,ix){selectPole(i);selL=[i,ix];const L=lampList(i),t=L[ix];const e=pe(i)||{};
+ const icon=n=>symSvg([[LBLK[n],0,0,0]],34,14);
+ const box=document.createElement('div');box.className='lampbox';
+ box.innerHTML=`<h4>Bộ đèn ${ix+1}/${L.length} – đang là <b>${LTN[t]||t}</b></h4><p class="note">Nhầm loại đèn thì bấm ký hiệu đúng để đổi riêng bộ đèn này.</p>
+  <div class="chips">${['LED','HPS','MH','TT'].map(n=>`<button type="button" class="chip ${n===t?'on':''}" data-sl="${n}" ${canWrite?'':'disabled'}>${icon(n)}<span>${LTN[n]}</span></button>`).join('')}</div>
+  <div class="row"><button class="btn" id="lAdd" ${canWrite?'':'disabled'}>Thêm 1 bộ đèn</button><button class="btn danger" id="lDel" ${canWrite?'':'disabled'}>Gỡ bộ đèn này</button><button class="btn" id="lAll" ${canWrite?'':'disabled'}>Đổi cả trụ thành ${LTN[t]||t}</button></div>`;
+ $('info').prepend(box);
+ const apply=(Ln,msg)=>{setPole(i,{lt:null,nl:null,lts:Ln});selectLamp(i,Math.min(ix,Math.max(0,Ln.length-1)));if(!Ln.length)selectPole(i);cmdMsg(msg+' – nhớ bấm Cập nhật')};
+ for(const b of box.querySelectorAll('[data-sl]'))b.onclick=()=>{const Ln=lampList(i);Ln[ix]=b.dataset.sl;apply(Ln,`Đã đổi bộ đèn ${ix+1} của ${P[i][0]} thành ${LTN[b.dataset.sl]}`)};
+ box.querySelector('#lAdd').onclick=()=>{const Ln=lampList(i);Ln.push(t);apply(Ln,`Đã thêm bộ đèn ${LTN[t]} cho ${P[i][0]}`)};
+ box.querySelector('#lDel').onclick=()=>{const Ln=lampList(i);Ln.splice(ix,1);apply(Ln,`Đã gỡ bộ đèn ${ix+1} của ${P[i][0]}`)};
+ box.querySelector('#lAll').onclick=()=>{setPole(i,{lt:t,lts:null,nl:L.length});selectPole(i);cmdMsg(`Đã đổi cả trụ ${P[i][0]} thành ${LTN[t]}`)};
+ draw()}
+function selectPole(i,zoom){if(i==null||i<0)return;selP=i;selS=-1;selL=null;const p=P[i],e=pe(i)||{};$('infoSec').hidden=false;const lt=lampT(i);const isNew=NEW[i];
  const moved=!isNew&&e.x!=null,snapped=!isNew&&!moved&&opt.snap&&p[14];const sc=isNew?'':D.ph[p[8]];const old=p[16];const ang=((angDeg(i))%360+360)%360;
  $('info').innerHTML=`<h3>${esc(p[0])}${isNew?' <small class="tag">vẽ thêm</small>':''}</h3>
   ${isNew&&canWrite?`<label class="fl">Tên<span class="row"><input id="inName" type="text" value="${esc(p[0])}"><button class="btn" id="bName">Đổi tên</button></span></label>`:''}
@@ -638,9 +670,9 @@ function selectPole(i,zoom){if(i==null||i<0)return;selP=i;selS=-1;const p=P[i],e
   ${!ISCAB(PK[i])?(()=>{const q=lampDesc(i);return`<dt>Bộ đèn</dt><dd>${q.s}</dd>${q.a?`<dt>Cần đèn</dt><dd>${q.a}</dd>`:''}`})():''}
   ${!ISCAB(PK[i])?(()=>{const r=snLabel(i);return`<dt>Số nhà</dt><dd>${r?esc(r.t)+(r.k==='seg'?' <small class="tag">theo phân đoạn</small>':''):'<span class="warn">Chưa có – nhập số nhà thực tế bên dưới</span>'}</dd>`})():''}
   ${NEW[i]&&e.lk?`<dt>Liên kết</dt><dd>${esc(e.lk)}</dd>`:''}</dl>
-  ${!ISCAB(PK[i])?`<div class="seg">${Object.keys(LTN).map(t=>`<button class="btn ${lt===t?'on':''}" data-lt="${t}">${LTN[t].replace('Đèn ','')}</button>`).join('')}</div>`:''}
+  ${!ISCAB(PK[i])?`<div class="seg">${Object.keys(LTN).map(t=>`<button class="btn kb ${lt===t?'on':''}" data-lt="${t}">${LBLK[t]?symSvg([[LBLK[t],0,0,0]],26,12):''}${LTN[t].replace('Đèn ','')}</button>`).join('')}</div>`:''}
   ${!ISCAB(PK[i])&&!['NONE','TT'].includes(lt)?`<div class="seg"><span class="segl">Số bộ đèn</span>${[1,2].map(n=>`<button class="btn ${nLamp(i)===n?'on':''}" data-nl="${n}">${n}</button>`).join('')}</div>`:''}
-  ${isNew||!ISCAB(PK[i])?`<div class="seg">${KIND.map((n,kd)=>isNew||!ISCAB(kd)?`<button class="btn ${PK[i]===kd?'on':''}" data-k="${kd}">${n.replace('Tủ điều khiển','Tủ').replace('Không trụ vật lý','Không trụ').replace('Trụ treo cáp – TTC','TTC')}</button>`:'').join('')}</div>`:''}
+  ${isNew||!ISCAB(PK[i])?`<div class="seg">${KIND.map((n,kd)=>isNew||!ISCAB(kd)?`<button class="btn kb ${PK[i]===kd?'on':''}" data-k="${kd}">${PBLK[kd]?symSvg([[PBLK[kd],0,0,0]],22,14):''}${n.replace('Tủ điều khiển','Tủ').replace('Không trụ vật lý','Không trụ').replace('Trụ treo cáp – TTC','TTC')}</button>`:'').join('')}</div>`:''}
   ${!ISCAB(PK[i])?`<div class="snbox"><label class="fl">Số nhà thực tế tại vị trí trụ<span class="row"><input id="inSN" type="text" placeholder="vd 183, 181A, 12/4" autocomplete="off"><button class="btn" id="bSN">Lưu tại vị trí trụ</button>${STANDALONE&&navigator.geolocation?'<button class="btn" id="bSNg">Lưu theo GPS</button>':''}</span></label>
    <label class="chk"><input type="checkbox" id="cMid" ${e.mid?'checked':''}> Trụ giữa đường / trụ tạm – số nhà tính theo phân đoạn đầu – cuối của tủ</label>
    ${(()=>{const L=hnNear(PX[i],PY[i],6).filter(([d,h])=>h.id);return L.length?`<div class="row">${L.map(([d,h])=>`<button class="btn" data-hdel="${h.t}|${h.id}">Xóa SN ${esc(h.s)} đã nhập</button>`).join('')}</div>`:''})()}</div>`:''}
@@ -653,7 +685,7 @@ function selectPole(i,zoom){if(i==null||i<0)return;selP=i;selS=-1;const p=P[i],e
     <button class="btn" data-n="0,1" aria-label="Lên">↑</button><button class="btn" data-n="0,-1" aria-label="Xuống">↓</button><button class="btn" data-n="-1,0" aria-label="Trái">←</button><button class="btn" data-n="1,0" aria-label="Phải">→</button></div>
    <p class="note" id="coordMsg"></p></details>
   <div class="row">${!isNew&&p[14]?'<button class="btn" id="bSnap">Căn vào lề</button>':''}${isNew?'':'<button class="btn" id="bOrig">Vị trí Smart City</button>'}<button class="btn" id="bTu">Xem cả tủ</button><button class="btn danger" id="bDel">Xóa</button></div>`;
- for(const b of $('info').querySelectorAll('[data-lt]'))b.onclick=()=>{setPole(i,{lt:b.dataset.lt});selectPole(i)};
+ for(const b of $('info').querySelectorAll('[data-lt]'))b.onclick=()=>{setPole(i,{lt:b.dataset.lt,lts:null});selectPole(i)};
  for(const b of $('info').querySelectorAll('[data-k]'))b.onclick=()=>{const k=+b.dataset.k;setPole(i,{k:NEW[i]||k!==kind0(P[i])?k:null});selectPole(i)};
  for(const b of $('info').querySelectorAll('[data-nl]'))b.onclick=()=>{const n=+b.dataset.nl;setPole(i,{nl:n===nLamp0(i)?null:n});selectPole(i)};
  for(const b of $('info').querySelectorAll('[data-r]'))b.onclick=()=>{setPole(i,{a:((angDeg(i)+ +b.dataset.r)%360+360)%360});selectPole(i)};
@@ -679,7 +711,7 @@ function selectPole(i,zoom){if(i==null||i<0)return;selP=i;selS=-1;const p=P[i],e
  for(const b of $('info').querySelectorAll('[data-n]'))b.onclick=()=>{const st=+$('stp').value;const[dx,dy]=b.dataset.n.split(',').map(Number);setPole(i,{x:r2(PX[i]+D.X0+dx*st),y:r2(PY[i]+D.Y0+dy*st)});selectPole(i);$('stp').value=String(st)};
  if(!canWrite)for(const b of $('info').querySelectorAll('button:not(#bTu)'))b.disabled=true;
  if(zoom){k=Math.max(k,5);cx=PX[i];cy=PY[i]}draw()}
-function selectSeg(j){selS=j;selP=-1;const s=S[j],t=stype(s),o=sedit(s);$('infoSec').hidden=false;
+function selectSeg(j){selS=j;selP=-1;selL=null;const s=S[j],t=stype(s),o=sedit(s);$('infoSec').hidden=false;
  $('info').innerHTML=`<h3>Đoạn cáp ${fmt(slen(s))} m${s.nw?' <small class="tag">vẽ thêm</small>':''}</h3><dl class="kv"><dt>Từ</dt><dd>${esc(P[s.a][0])}</dd><dt>Đến</dt><dd>${esc(P[s.b][0])}</dd><dt>Tủ</dt><dd>${esc(D.tu[s.tu])}</dd><dt>Loại cáp</dt><dd>${t?'Cáp nổi':'Cáp ngầm'}${s.nw?'':o&&o.t!=null?' (đã sửa)':' (suy ra theo loại trụ)'}</dd>${s.f===1?'<dt>Ghi chú</dt><dd>Nối nhánh suy ra, cần kiểm tra</dd>':''}${s.f===2?'<dt>Ghi chú</dt><dd class="warn">Khoảng cách lớn bất thường</dd>':''}</dl>
  <div class="row"><button class="btn pri" id="bT">Đổi thành cáp ${t?'ngầm':'nổi'}</button><button class="btn danger" id="bD">Xóa đoạn</button>${!s.nw&&o?'<button class="btn" id="bR">Khôi phục</button>':''}</div>`;
  $('bT').onclick=()=>{setSeg(s,{t:t?0:1});selectSeg(S.findIndex(x=>x.key===s.key))};
@@ -746,7 +778,7 @@ function buildDxf(){const out=[];const w=(c,v)=>out.push(String(c),String(v));co
  for(let i=0;i<N;i++){const t=PT[i];if(!pv(i))continue;const b=names[t];if(!b)continue;const pb=PBLK[PK[i]];const a0=angOf(i);
   if(!pb){w(0,'CIRCLE');w(8,b+'_TRU');w(10,X(PX[i]));w(20,Y(PY[i]));w(30,0);w(40,0.5)}
   emitPoleLamp(i,(blk,lay,x,y,a)=>ins(blk,lay,x,y,a),b+(ISCAB(PK[i])?'_TU':'_TRU'),b+'_DEN',1,a0,pb);
-  const ta=a0+Math.PI;w(0,'TEXT');w(8,b+'_TEN');w(10,X(PX[i]+Math.cos(ta)*2.2-(Math.cos(ta)<0?P[i][0].length*0.9:0)));w(20,Y(PY[i]+Math.sin(ta)*2.2-0.6));w(30,0);w(40,1.2);w(1,dxfStr(P[i][0]))}
+  const ta=labAng(i);w(0,'TEXT');w(8,b+'_TEN');w(10,X(PX[i]+Math.cos(ta)*2.2-(Math.cos(ta)<0?P[i][0].length*0.9:0)));w(20,Y(PY[i]+Math.sin(ta)*2.2-0.6));w(30,0);w(40,1.2);w(1,dxfStr(P[i][0]))}
  for(const s of S){const t=s.tu;if(!names[t]||!pv(s.a)||sdel(s)||s.f===2)continue;const b=names[t];const ty=stype(s);
   w(0,'LINE');w(8,b+(ty?'_CAPNOI':'_CAPNGAM'));if(!ty)w(48,10);w(10,X(PX[s.a]));w(20,Y(PY[s.a]));w(30,0);w(11,X(PX[s.b]));w(21,Y(PY[s.b]));w(31,0);
   let a=Math.atan2(PY[s.b]-PY[s.a],PX[s.b]-PX[s.a])*180/Math.PI;if(a>90)a-=180;if(a<-90)a+=180;const mx=(PX[s.a]+PX[s.b])/2,my=(PY[s.a]+PY[s.b])/2;
@@ -813,10 +845,10 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
  if(tot>1)ROLE.TUNAME=D.tu[t].toUpperCase()+` (BẢN ${no}/${tot})`;
  // chữ khung: TEXT giữ nguyên; MTEXT của khung mẫu được dàn lại đúng ô (bề rộng ô, điểm canh, canh giữa/trái, tự xuống dòng)
  const cw=ch=>{const b=ch.normalize('NFD')[0];if(b===' ')return .278;if(/[0-9]/.test(b))return .556;if(/[A-ZĐ]/.test(b))return/[MW]/.test(b)?.83:/[IJ]/.test(b)?.28:.68;if(/[a-zđ]/.test(b))return/[mw]/.test(b)?.8:/[iljft]/.test(b)?.26:.53;return .33};
- const tw=(t,h)=>{let v=0;for(const c of t)v+=c==='\t'?4:cw(c);return v*h};
+ const tw=(t,h)=>{let v=0;for(const c of t)v+=c==='\t'?4:cw(c);return v*h*1.3};
  for(const[x,y,h,r,str,a1,a2,font,role,box]of FR.TX){const S0=role?ROLE[role]:str;
   if(!box){txt('KHUNG_CHU',MX(x),MY(y),h*s,r,S0,a1,a2,font);continue}
-  const W=box.w*s,H=h*s,L=[];for(const para of String(S0).split('\n')){if(!W||tw(para,H)<=W){L.push(para);continue}let cur='';for(const wd of para.split(' ')){const t=cur?cur+' '+wd:wd;if(cur&&tw(t,H)>W){L.push(cur);cur=wd}else cur=t}L.push(cur)}
+  const W=box.w*s,H=h*s,L=[];for(const para of String(S0).split('\n')){if(!W||W<60||tw(para,H)<=W){L.push(para);continue}let cur='';for(const wd of para.split(' ')){const t=cur?cur+' '+wd:wd;if(cur&&tw(t,H)>W){L.push(cur);cur=wd}else cur=t}L.push(cur)}
   const n=L.length,sp=1.667*H,Ht=H+(n-1)*sp,X=MX(x),Y=MY(y),top=a2===0?Y:a2===1?Y+Ht/2:Y+Ht,left=!W?X:a1===0?X:a1===1?X-W/2:X-W,al=W?box.al:a1;
   const ax=!W?X:al===0?left:al===1?left+W/2:left+W;
   L.forEach((ln,k)=>{const tb=(ln.match(/^\t+/)||[''])[0].length;ln=ln.replace(/\t/g,' ').trim();if(ln)txt('KHUNG_CHU',ax+(al===0?tb*4*H:0),top-H-k*sp,H,0,ln,al,0,font)})}
@@ -835,10 +867,10 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
  for(const i of ids){if(!inR(PX[i],PY[i]))continue;const pb=PBLK[PK[i]];const a0=angOf(i);
   if(!pb){w(0,'CIRCLE');w(8,'TRU');w(10,X(PX[i]));w(20,Y(PY[i]));w(30,0);w(40,0.5*ss)}
   emitPoleLamp(i,ins,ISCAB(PK[i])?'TU_DIEU_KHIEN':'TRU','DEN',ss,a0,pb);
-  const ta=a0+Math.PI;txt('TEN_TRU',PX[i]+Math.cos(ta)*3.0*ss,PY[i]+Math.sin(ta)*3.0*ss,2.0*ss,0,P[i][0],Math.cos(ta)<0?2:0,2,'ARIAL');
+  const ta=labAng(i);txt('TEN_TRU',PX[i]+Math.cos(ta)*3.0*ss,PY[i]+Math.sin(ta)*3.0*ss,2.0*ss,0,P[i][0],Math.cos(ta)<0?2:0,2,'ARIAL');
   const snr=snLabel(i);if(snr)txt('SO_NHA',PX[i],PY[i]-2.4*ss,1.8*ss,0,snr.t,1,3,'ARIAL')}
  w(0,'ENDSEC');w(0,'EOF');return{dxf:out.join('\r\n')+'\r\n',scale:Math.round(1000*s)}}
-window.__zs=ts=>sheetsZip(ts);window.__sheet=(t)=>{const cs=sheetCenters(t);return cs.map((c,k)=>sheetDxf(t,k+1,cs.length,c))};
+window.__zs=ts=>sheetsZip(ts);window.__lc=i=>{const d=lampDraw(i)[0];const c=lampCenter(i,d[2]);return[sx(c[0]),sy(c[1])]};window.__sheet=(t)=>{const cs=sheetCenters(t);return cs.map((c,k)=>sheetDxf(t,k+1,cs.length,c))};
 function zipMany(files){const enc=new TextEncoder();const parts=[],cd=[];let off=0;
  for(const fl of files){const data=enc.encode(fl.data),nm=enc.encode(fl.name),crc=CRC(data);
   const lh=new DataView(new ArrayBuffer(30));lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,nm.length,true);
@@ -920,7 +952,7 @@ function renderPal(){const el=$('pal');if(!el)return;
  $('palDraw').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}go()};
  $('palApply').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}const i=selP;if(i<0||DEL[i]){cmdMsg('Chọn một trụ trên bản đồ trước, rồi bấm “Áp cho trụ đang chọn”');return}
   if(ISCAB(PK[i])){cmdMsg('Đối tượng đang chọn là tủ điều khiển, không áp ký hiệu trụ – đèn');return}
-  const nl=['NONE','TT'].includes(PAL.lt)?1:PAL.nl;setPole(i,{k:NEW[i]||PAL.k!==kind0(P[i])?PAL.k:null,lt:PAL.lt,nl:nl===nLamp0(i)?null:nl});selectPole(i);cmdMsg(`Đã đổi "${P[i][0]}" thành ${comboName(PAL.k,PAL.lt,nl)} – nhớ bấm Cập nhật`)}}
+  const nl=['NONE','TT'].includes(PAL.lt)?1:PAL.nl;setPole(i,{k:NEW[i]||PAL.k!==kind0(P[i])?PAL.k:null,lt:PAL.lt,lts:null,nl:nl===nLamp0(i)?null:nl});selectPole(i);cmdMsg(`Đã đổi "${P[i][0]}" thành ${comboName(PAL.k,PAL.lt,nl)} – nhớ bấm Cập nhật`)}}
 function syncNewOpt(){$('newKind').value=PAL.k;$('newLt').value=PAL.lt;$('newNl').value=PAL.nl}
 $('newKind').onchange=()=>{PAL.k=+$('newKind').value;renderPal()};$('newLt').onchange=()=>{PAL.lt=$('newLt').value;renderPal()};$('newNl').onchange=()=>{PAL.nl=+$('newNl').value;renderPal()};
 renderPal();syncNewOpt();
@@ -972,12 +1004,12 @@ async function importLamps(file){const out=$('ltImpOut');out.hidden=false;out.in
    ${m.bad.length?`<details><summary>Các dòng không khớp</summary><ul class="badl">${m.bad.slice(0,60).map(s=>`<li>${esc(s)}</li>`).join('')}</ul></details>`:''}`;
   $('ltNo').onclick=()=>{LTIMP=null;out.hidden=true;$('ltFile').value=''};
   $('ltOk').onclick=()=>{if(!LTIMP)return;const L=[...LTIMP.res].filter(([i,lt])=>lampT(i)!==lt);
-   op(L.map(([i])=>PT[i]),()=>{for(const[i,lt]of L){const t=PT[i],id=ID(i);const tgt=NEW[i]?ED[t].np:ED[t].p;tgt[id]={...(tgt[id]||{}),lt}}});
+   op(L.map(([i])=>PT[i]),()=>{for(const[i,lt]of L){const t=PT[i],id=ID(i);const tgt=NEW[i]?ED[t].np:ED[t].p;tgt[id]={...(tgt[id]||{}),lt};delete tgt[id].lts}});
    out.innerHTML=`<p>Đã cập nhật loại đèn cho ${L.length.toLocaleString('vi-VN')} trụ. Bấm <b>Cập nhật</b> để lưu lên bản đồ (Ctrl+Z để hoàn tác).</p>`;LTIMP=null;$('ltFile').value='';renderTu()}}
  catch(e){out.innerHTML=`<p class="warn">${esc(e.message||e)}</p>`}}
-$('ltReset').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}const ts=[];ED.forEach((e,t)=>{for(const id in e.p)if(e.p[id].lt!=null||e.p[id].nl!=null){ts.push(t);break}});
+$('ltReset').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}const ts=[];ED.forEach((e,t)=>{for(const id in e.p)if(e.p[id].lt!=null||e.p[id].nl!=null||e.p[id].lts!=null){ts.push(t);break}});
  if(!ts.length){$('ltImpOut').hidden=false;$('ltImpOut').innerHTML='<p>Không có trụ nào đang chỉnh tay loại đèn.</p>';return}
- let n=0;op(ts,()=>{for(const t of ts)for(const id in ED[t].p){const o=ED[t].p[id];if(o.lt!=null||o.nl!=null){delete o.lt;delete o.nl;n++;if(!Object.keys(o).length)delete ED[t].p[id]}}});
+ let n=0;op(ts,()=>{for(const t of ts)for(const id in ED[t].p){const o=ED[t].p[id];if(o.lt!=null||o.nl!=null||o.lts!=null){delete o.lt;delete o.nl;delete o.lts;n++;if(!Object.keys(o).length)delete ED[t].p[id]}}});
  $('ltImpOut').hidden=false;$('ltImpOut').innerHTML=`<p>Đã bỏ chỉnh tay loại đèn ở ${n} trụ (${ts.length} tủ) – app dùng lại số liệu file bộ đèn. Bấm <b>Cập nhật</b> để lưu.</p>`};
 $('ltFile').onchange=e=>{const f=e.target.files[0];if(f)importLamps(f)};
 window.__lt=(rows)=>{const m=matchLamps([{name:'t',rows}]);return{n:m.res.size,bad:m.bad.length,total:m.total,res:[...m.res].slice(0,5).map(([i,lt])=>[P[i][0],lt])}};
