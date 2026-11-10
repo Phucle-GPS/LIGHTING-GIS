@@ -953,7 +953,19 @@ function clipSeg(x0,y0,x1,y1,r){let t0=0,t1=1;const dx=x1-x0,dy=y1-y0;const p=[-
  return[x0+t0*dx,y0+t0*dy,x0+t1*dx,y0+t1*dy,t0===0,t1===1]}
 function clipPoly(p,r,out){let cur=null;for(let q=0;q+3<p.length;q+=2){const c=clipSeg(p[q],p[q+1],p[q+2],p[q+3],r);if(!c){if(cur){out.push(cur);cur=null}continue}
  if(!cur||!c[4]){if(cur)out.push(cur);cur=[c[0],c[1]]}cur.push(c[2],c[3]);if(!c[5]){out.push(cur);cur=null}}if(cur)out.push(cur)}
-function sheetCenters(t){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])ids.push(i);if(!ids.length)return[];
+// hành lang tuyến: chỉ giữ nền (mép đường, tim đường, sông, ranh phường) và tên đường/hẻm trong phạm vi D m quanh cáp + trụ của tủ
+function corridor(t,D=28){const segs=[];for(const s of S){if(s.tu!==t||sdel(s)||s.f===2)continue;segs.push([PX[s.a],PY[s.a],PX[s.b],PY[s.b]])}
+ for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])segs.push([PX[i],PY[i],PX[i],PY[i]]);const cb=cabOf(t);if(cb)segs.push([cb[0],cb[1],cb[0],cb[1]]);
+ const G=new Map(),CS=50;const bb=[1e9,1e9,-1e9,-1e9];
+ segs.forEach((g,k)=>{const x0=Math.min(g[0],g[2])-D,x1=Math.max(g[0],g[2])+D,y0=Math.min(g[1],g[3])-D,y1=Math.max(g[1],g[3])+D;bb[0]=Math.min(bb[0],x0);bb[1]=Math.min(bb[1],y0);bb[2]=Math.max(bb[2],x1);bb[3]=Math.max(bb[3],y1);
+  for(let a=Math.floor(x0/CS);a<=Math.floor(x1/CS);a++)for(let b=Math.floor(y0/CS);b<=Math.floor(y1/CS);b++){const key=a+','+b;if(!G.has(key))G.set(key,[]);G.get(key).push(k)}});
+ const dseg=(x,y,g)=>{const vx=g[2]-g[0],vy=g[3]-g[1],L=vx*vx+vy*vy;let u=L?((x-g[0])*vx+(y-g[1])*vy)/L:0;u=Math.max(0,Math.min(1,u));return Math.hypot(g[0]+u*vx-x,g[1]+u*vy-y)};
+ const near=(x,y,d)=>{const L=G.get(Math.floor(x/CS)+','+Math.floor(y/CS));if(!L)return false;for(const k of L)if(dseg(x,y,segs[k])<=d)return true;return false};
+ const cut=(xs,d)=>{const out=[];let cur=null;for(let q=0;q+3<xs.length;q+=2){const ax=xs[q],ay=xs[q+1],bx=xs[q+2],by=xs[q+3],n=Math.max(1,Math.ceil(Math.hypot(bx-ax,by-ay)/2));
+   for(let m=0;m<n;m++){const x0=ax+(bx-ax)*m/n,y0=ay+(by-ay)*m/n,x1=ax+(bx-ax)*(m+1)/n,y1=ay+(by-ay)*(m+1)/n;
+    if(near((x0+x1)/2,(y0+y1)/2,d)){if(!cur){cur=[x0,y0];out.push(cur)}cur.push(x1,y1)}else cur=null}}return out.filter(p=>p.length>=4)};
+ return{near,cut,bb,D}}
+function sheetGrid(t){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])ids.push(i);if(!ids.length)return[];
  const fw=FR.fit[2]-FR.fit[0]-16,fh=FR.fit[3]-FR.fit[1]-16;let x0=1e9,y0=1e9;for(const i of ids){x0=Math.min(x0,PX[i]);y0=Math.min(y0,PY[i])}
  let best=null;
  for(const ox of[0,1/4,1/2,3/4])for(const oy of[0,1/4,1/2,3/4]){const G=new Map();
@@ -967,8 +979,30 @@ function sheetCenters(t){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])
    let bb=[hit(c[0],c[1]),0,c];if(bb[0])for(let u=-8;u<=8;u++)for(let v=-8;v<=8;v++){const cx=c[0]+u/8*slx,cy=c[1]+v/8*sly,h=hit(cx,cy),d=Math.hypot(u*slx,v*sly);if(h<bb[0]||(h===bb[0]&&d<bb[1]))bb=[h,d,[cx,cy]]}c=bb[2]}
   out.push(c)}
  out.sort((a,b)=>(b[1]-a[1])||(a[0]-b[0]));return out}
+function sheetCenters(t){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])ids.push(i);if(!ids.length)return[];
+ // gom 1 tủ vào 1 bản vẽ (tỉ lệ 1/1000 → tối đa 1/2000); nếu quá lớn thì tách thành 2 bản (mỗi bản chọn tỉ lệ nhỏ nhất vừa khung)
+ const pts=ids.map(i=>[PX[i],PY[i]]);const cb=cabOf(t);if(cb){const b0=[Math.min(...pts.map(p=>p[0])),Math.min(...pts.map(p=>p[1])),Math.max(...pts.map(p=>p[0])),Math.max(...pts.map(p=>p[1]))];if(cb[0]>b0[0]-150&&cb[0]<b0[2]+150&&cb[1]>b0[1]-150&&cb[1]<b0[3]+150)pts.push([cb[0],cb[1]])}
+ const fw=FR.fit[2]-FR.fit[0]-16,fh=FR.fit[3]-FR.fit[1]-16,fc=[(FR.fit[0]+FR.fit[2])/2,(FR.fit[1]+FR.fit[3])/2];
+ const AV0=(FR.avoid||[]).map(a=>[a[0]-fc[0]-2,a[1]-fc[1]-2,a[2]-fc[0]+2,a[3]-fc[1]+2]);
+ const SC=[1];
+ const box=P=>{const b=[1e9,1e9,-1e9,-1e9];for(const[x,y]of P){b[0]=Math.min(b[0],x);b[1]=Math.min(b[1],y);b[2]=Math.max(b[2],x);b[3]=Math.max(b[3],y)}return b};
+ const place=(P,s)=>{const b=box(P);let c=[(b[0]+b[2])/2,(b[1]+b[3])/2];const AV=AV0.map(a=>a.map(v=>v*s));if(!AV.length)return{c,h:0};
+  const slx=Math.max(0,fw*s-(b[2]-b[0]))/2,sly=Math.max(0,fh*s-(b[3]-b[1]))/2;const hit=(cx,cy)=>{let n=0;for(const[x,y]of P)for(const a of AV)if(x>=cx+a[0]&&x<=cx+a[2]&&y>=cy+a[1]&&y<=cy+a[3])n++;return n};
+  let bb=[hit(c[0],c[1]),0,c];if(bb[0])for(let u=-8;u<=8;u++)for(let v=-8;v<=8;v++){const cx=c[0]+u/8*slx,cy=c[1]+v/8*sly,h=hit(cx,cy),d=Math.hypot(u*slx,v*sly);if(h<bb[0]||(h===bb[0]&&d<bb[1]))bb=[h,d,[cx,cy]]}return{c:bb[2],h:bb[0]}};
+ const fit=P=>{const b=box(P),w=b[2]-b[0],h=b[3]-b[1];for(const s of SC){if(w>fw*s||h>fh*s)continue;const p=place(P,s);if(!p.h||s===SC[SC.length-1])return{s,c:p.c};
+   // còn trụ nằm dưới khung chú thích: thử tỉ lệ kế tiếp
+  }return{s:Math.max(2,Math.ceil(Math.max(w/fw,h/fh))),c:place(P,1).c}};
+ const one=fit(pts);if(one.s<=1)return[[one.c[0],one.c[1],1]];
+ // tách 2: cắt theo trục X, trục Y hoặc trục chính của tuyến, chọn cách cho tỉ lệ lớn nhất nhỏ nhất
+ const mx=pts.reduce((v,p)=>v+p[0],0)/pts.length,my=pts.reduce((v,p)=>v+p[1],0)/pts.length;let sxx=0,syy=0,sxy=0;for(const[x,y]of pts){sxx+=(x-mx)**2;syy+=(y-my)**2;sxy+=(x-mx)*(y-my)}
+ const th=0.5*Math.atan2(2*sxy,sxx-syy);const axes=[[1,0],[0,1],[Math.cos(th),Math.sin(th)]];let best=null;
+ for(const[ax,ay]of axes){const S=pts.map(p=>[p[0]*ax+p[1]*ay,p]).sort((u,v)=>u[0]-v[0]);
+  for(let q=0.3;q<=0.701;q+=0.05){const k=Math.max(1,Math.min(S.length-1,Math.round(S.length*q)));const A=S.slice(0,k).map(z=>z[1]),B=S.slice(k).map(z=>z[1]);if(!A.length||!B.length)continue;
+   const fa=fit(A),fb=fit(B),m=Math.max(fa.s,fb.s),sum=fa.s+fb.s;if(!best||m<best.m||(m===best.m&&sum<best.sum))best={m,sum,fa,fb}}}
+ if(!best||best.m>1)return sheetGrid(t);
+ const out=[[best.fa.c[0],best.fa.c[1],best.fa.s],[best.fb.c[0],best.fb.c[1],best.fb.s]];out.sort((a,b)=>(b[1]-a[1])||(a[0]-b[0]));return out}
 function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])ids.push(i);if(!ids.length)return null;
- const s=1;const b=[center[0]-1,center[1]-1,center[0]+1,center[1]+1];
+ const s=center[2]||1;const b=[center[0]-1,center[1]-1,center[0]+1,center[1]+1];
  const fc=[(FR.fit[0]+FR.fit[2])/2,(FR.fit[1]+FR.fit[3])/2],bc=[(b[0]+b[2])/2,(b[1]+b[3])/2];
  const MX=lx=>bc[0]+(lx-fc[0])*s,MY=ly=>bc[1]+(ly-fc[1])*s;
  const out=[];const w=(c,v)=>out.push(String(c),String(v));const f=v=>(+v).toFixed(3);const X=x=>(x+D.X0).toFixed(3),Y=y=>(y+D.Y0).toFixed(3);
@@ -1008,12 +1042,13 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
   L.forEach((ln,k)=>{const tb=(ln.match(/^\t+/)||[''])[0].length;ln=ln.replace(/\t/g,' ').trim();if(ln)txt('KHUNG_CHU',ax+(al===0?tb*4*H:0),top-H-k*sp,H,0,ln,al,0,font)})}
  // nền bản đồ trong khung
  const rects=FR.clip.map(c=>[MX(c[0]),MY(c[1]),MX(c[2]),MY(c[3])]);
- if(BASE){for(const[kind,lay]of[['edge','HTGT_LINE'],['tim','HT_GT_TIM'],['river','SONG_RACH'],['ward','RANH_PHUONG_MOI']])for(const o of BASE[kind])for(const r of rects){if(o.b[2]<r[0]||o.b[0]>r[2]||o.b[3]<r[1]||o.b[1]>r[3])continue;const res=[];clipPoly(o.p,r,res);for(const xs of res)pl(lay,xs,false,0,lay==='RANH_PHUONG_MOI')}
-  const DP=[];for(const tx of BASE.text){if(!rects.some(r=>tx.x>=r[0]&&tx.x<=r[2]&&tx.y>=r[1]&&tx.y<=r[3]))continue;{const hh=Math.max(2.5,tx.h),ww=tx.s.length*hh*0.62,c_=Math.abs(Math.cos(tx.r)),s_=Math.abs(Math.sin(tx.r)),bw=(ww*c_+hh*s_)/2,bh=(ww*s_+hh*c_)/2;if(DP.some(b=>Math.abs(b[0]-tx.x)<b[2]+bw&&Math.abs(b[1]-tx.y)<b[3]+bh))continue;DP.push([tx.x,tx.y,bw,bh])}let a=((tx.r*180/Math.PI)%360+360)%360;if(a>90&&a<=270)a-=180;txt('TEN_DUONG',tx.x,tx.y,Math.max(2.5,tx.h)*Math.max(1,s),a,tx.s,1,2,'ARIAL')}}
+ const CR=corridor(t);
+ if(BASE){for(const[kind,lay]of[['edge','HTGT_LINE'],['tim','HT_GT_TIM'],['river','SONG_RACH'],['ward','RANH_PHUONG_MOI']])for(const o of BASE[kind])for(const r of rects){if(o.b[2]<r[0]||o.b[0]>r[2]||o.b[3]<r[1]||o.b[1]>r[3])continue;if(o.b[2]<CR.bb[0]||o.b[0]>CR.bb[2]||o.b[3]<CR.bb[1]||o.b[1]>CR.bb[3])continue;const res=[];clipPoly(o.p,r,res);for(const xs of res)for(const ys of CR.cut(xs,kind==='ward'?CR.D*0.6:CR.D))pl(lay,ys,false,0,lay==='RANH_PHUONG_MOI')}
+  const DP=[];for(const tx of BASE.text){if(!rects.some(r=>tx.x>=r[0]&&tx.x<=r[2]&&tx.y>=r[1]&&tx.y<=r[3]))continue;if(!CR.near(tx.x,tx.y,CR.D+6))continue;{const hh=Math.max(2.5,tx.h),ww=tx.s.length*hh*0.62,c_=Math.abs(Math.cos(tx.r)),s_=Math.abs(Math.sin(tx.r)),bw=(ww*c_+hh*s_)/2,bh=(ww*s_+hh*c_)/2;if(DP.some(b=>Math.abs(b[0]-tx.x)<b[2]+bw&&Math.abs(b[1]-tx.y)<b[3]+bh))continue;DP.push([tx.x,tx.y,bw,bh])}let a=((tx.r*180/Math.PI)%360+360)%360;if(a>90&&a<=270)a-=180;txt('TEN_DUONG',tx.x,tx.y,Math.max(2.5,tx.h)*Math.max(1,s),a,tx.s,1,2,'ARIAL')}}
  // đèn, trụ, cáp của tủ
  const ins=(blk,layer,x,y,a,sc)=>{const Sy=SYMR[blk],c=Math.cos(a),sn=Math.sin(a);const ix=x,iy=y;
   w(0,'INSERT');w(8,layer);w(2,BN(blk));w(10,X(ix));w(20,Y(iy));w(30,0);w(41,sc);w(42,sc);w(43,1);if(a)w(50,(((a*180/Math.PI)%360)+360)%360)};
- const ss=1;const inR=(x,y)=>rects.some(r=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3]);
+ const ss=s;const inR=(x,y)=>rects.some(r=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3]);
  const RUN=[];for(const sg of S){if(sg.tu!==t||sdel(sg)||sg.f===2)continue;const ty=stype(sg);
   for(const r of rects){const c=clipSeg(PX[sg.a],PY[sg.a],PX[sg.b],PY[sg.b],r);if(!c)continue;const L=RUN[RUN.length-1];
    if(L&&L.ty===ty&&Math.abs(L.xs[L.xs.length-2]-c[0])<1e-6&&Math.abs(L.xs[L.xs.length-1]-c[1])<1e-6)L.xs.push(c[2],c[3]);else RUN.push({ty,xs:[c[0],c[1],c[2],c[3]]})}
@@ -1029,7 +1064,7 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
   const snr=snLabel(i);if(snr)txt('SO_NHA',PX[i],PY[i]-2.4*ss,1.8*ss,0,snr.t,1,3,'ARIAL')}
  {const cb=cabOf(t);if(cb&&inR(cb[0],cb[1])){const bk=cb[8]?'Tu dk KNTT':'Tu dieu khien thuong';if(SYMR[bk])ins(bk,'TU_DIEU_KHIEN',cb[0],cb[1],0,ss);txt('TEN_TRU',cb[0]+4*ss,cb[1],2.0*ss,0,'TĐK '+D.tu[t],0,2,'ARIAL')}}
  w(0,'ENDSEC');w(0,'EOF');return{dxf:out.join('\r\n')+'\r\n',scale:Math.round(1000*s)}}
-window.__zs=ts=>sheetsZip(ts);window.__lc=i=>{const d=lampDraw(i)[0];const c=lampCenter(i,d[2]);return[sx(c[0]),sy(c[1])]};window.__sheet=(t)=>{const cs=sheetCenters(t);return cs.map((c,k)=>sheetDxf(t,k+1,cs.length,c))};
+window.__zs=ts=>sheetsZip(ts);window.__sc=t=>sheetCenters(t);window.__one=ts=>oneDxf(ts);window.__lc=i=>{const d=lampDraw(i)[0];const c=lampCenter(i,d[2]);return[sx(c[0]),sy(c[1])]};window.__sheet=(t)=>{const cs=sheetCenters(t);return cs.map((c,k)=>sheetDxf(t,k+1,cs.length,c))};
 function zipMany(files){const enc=new TextEncoder();const parts=[],cd=[];let off=0;
  for(const fl of files){const data=enc.encode(fl.data),nm=enc.encode(fl.name),crc=CRC(data);
   const lh=new DataView(new ArrayBuffer(30));lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,nm.length,true);
@@ -1041,15 +1076,16 @@ const slugTu=t=>unacc(D.tu[t]).replace(/[^A-Za-z0-9-]+/g,'_').replace(/_+$/,'');
 const fileTu=(t,k,n)=>unacc(D.tu[t]).replace(/[\\/:*?"<>|]+/g,'-').trim()+(n>1?` (ban ${k}-${n})`:'')+'.dxf';
 // gộp nhiều bản vẽ khung vào 1 file DXF: bản 1 giữ đúng tọa độ VN-2000, các bản sau xếp cạnh nhau (cùng tủ một hàng, mỗi tủ một hàng)
 function oneDxf(ts){const W=FR.sheet[2]-FR.sheet[0],H=FR.sheet[3]-FR.sheet[1],G=40,fc=[(FR.fit[0]+FR.fit[2])/2,(FR.fit[1]+FR.fit[3])/2];
- let head=null,ents=[],row=-1,base=null,n=0,nt=0;const ext=[1e18,1e18,-1e18,-1e18];
+ let head=null,ents=[],row=-1,base=null,rowB=0,n=0,nt=0;const ext=[1e18,1e18,-1e18,-1e18];
  for(const t of ts){const cs=sheetCenters(t);if(!cs.length)continue;row++;nt++;
-  cs.forEach((c,col)=>{const r=sheetDxf(t,col+1,cs.length,c);if(!r)return;n++;const L=r.dxf.split('\r\n');
-   const mnx=c[0]+(FR.sheet[0]-fc[0])+D.X0,mny=c[1]+(FR.sheet[1]-fc[1])+D.Y0;if(!base)base=[mnx,mny];
-   const ox=base[0]+col*(W+G)-mnx,oy=base[1]-row*(H+G)-mny;let s=-1,e=-1;
+  const rowH=Math.max(...cs.map(c=>H*(c[2]||1)));let curX=0;
+  cs.forEach((c,col)=>{const r=sheetDxf(t,col+1,cs.length,c);if(!r)return;n++;const L=r.dxf.split('\r\n');const sc=c[2]||1,Ws=W*sc,Hs=H*sc;
+   const mnx=c[0]+(FR.sheet[0]-fc[0])*sc+D.X0,mny=c[1]+(FR.sheet[1]-fc[1])*sc+D.Y0;if(!base){base=[mnx,mny];rowB=mny}else if(col===0)rowB=rowB-rowH-G;
+   const ox=base[0]+curX-mnx,oy=rowB-mny;curX+=Ws+G;let s=-1,e=-1;
    for(let q=0;q<L.length-1;q+=2){if(s<0&&L[q].trim()==='2'&&L[q+1]==='ENTITIES')s=q+2;else if(s>0&&L[q].trim()==='0'&&L[q+1]==='ENDSEC'){e=q;break}}
    if(!head)head=L.slice(0,s);
    for(let q=s;q<e;q+=2){const cd=+L[q];let v=L[q+1];if(cd>=10&&cd<=18)v=(+v+ox).toFixed(3);else if(cd>=20&&cd<=28)v=(+v+oy).toFixed(3);ents.push(L[q],v)}
-   ext[0]=Math.min(ext[0],mnx+ox);ext[1]=Math.min(ext[1],mny+oy);ext[2]=Math.max(ext[2],mnx+ox+W);ext[3]=Math.max(ext[3],mny+oy+H)})}
+   ext[0]=Math.min(ext[0],mnx+ox);ext[1]=Math.min(ext[1],mny+oy);ext[2]=Math.max(ext[2],mnx+ox+Ws);ext[3]=Math.max(ext[3],mny+oy+Hs)})}
  if(!head)return null;
  const setV=(key,x,y)=>{const q=head.indexOf(key);if(q>=0){head[q+2]=x.toFixed(3);head[q+4]=y.toFixed(3)}};
  setV('$EXTMIN',ext[0],ext[1]);setV('$EXTMAX',ext[2],ext[3]);setV('$LIMMIN',ext[0],ext[1]);setV('$LIMMAX',ext[2],ext[3]);
@@ -1084,14 +1120,14 @@ function zip(name,str){const data=new TextEncoder().encode(str),nm=new TextEncod
  const saveSeq=async files=>{for(const f of files){await go(f.name,f.data);await new Promise(r=>setTimeout(r,STANDALONE?400:50))}};
  window.__exportSheet=t=>{if(!cntOf(t)){$('exNote').textContent=`Tủ ${D.tu[t]} chưa có dữ liệu trụ trong app nên chưa xuất được bản vẽ.`;return}if(!BASE){$('exNote').textContent='Chờ bản đồ nền tải xong rồi xuất lại.';return}
   const r=oneDxf([t]);if(!r)return;const nm=unacc(D.tu[t]).replace(/[\\/:*?"<>|]+/g,'-').trim();
-  $('exNote').textContent=`Tủ ${D.tu[t]}: ${r.n} bản vẽ (tỉ lệ 1/1000) gộp trong 1 file DXF.`;
+  $('exNote').textContent=`Tủ ${D.tu[t]}: ${r.n} bản vẽ tỉ lệ 1/1000 gộp trong 1 file DXF (nền chỉ thể hiện tuyến có đèn và tên đường/hẻm trên tuyến).`;
   if(STANDALONE)saveSeq([{name:nm+'.dxf',data:r.dxf}]);else go(nm+'.zip',zipMany([{name:nm+'.dxf',data:r.dxf}]))};
  $('exSheet').disabled=false;$('exSheets').disabled=false;
  $('exSheet').onclick=()=>{const t=curTu();if(t<0){$('exNote').textContent='Chọn một tủ (bấm ↗ ở danh sách tủ hoặc bấm vào một trụ) rồi xuất.';return}window.__exportSheet(t)};
  $('exSheets').onclick=()=>{if(!BASE){$('exNote').textContent='Chờ bản đồ nền tải xong rồi xuất lại.';return}const ts=[...Array(nT).keys()].filter(t=>vis[t]&&cntOf(t));
   if(ts.length>60){$('exNote').textContent=`Đang bật ${ts.length} tủ – chỉ xuất tối đa 60 tủ một lần. Lọc bớt tủ (ô Lọc tên tủ, Tắt tất cả rồi tick chọn) rồi xuất lại.`;return}
   $('exNote').textContent=`Đang tạo bản vẽ cho ${ts.length} tủ…`;setTimeout(()=>{const r=oneDxf(ts);if(!r){$('exNote').textContent='Các tủ đang bật chưa có trụ để xuất.';return}const nm=ts.length===1?unacc(D.tu[ts[0]]).replace(/[\\/:*?"<>|]+/g,'-').trim():`BanVe_TL1000_${r.nt}_tu`;
-   $('exNote').textContent=`Đã gộp ${r.n} bản vẽ (tỉ lệ 1/1000) của ${r.nt} tủ vào 1 file DXF – mỗi tủ một hàng, các bản của tủ xếp cạnh nhau.`;
+   $('exNote').textContent=`Đã gộp ${r.n} bản vẽ của ${r.nt} tủ vào 1 file DXF – tỉ lệ 1/1000, mỗi tủ một hàng (gom 1 bản, tủ dài tách 2 bản trở lên).`;
    if(STANDALONE)saveSeq([{name:nm+'.dxf',data:r.dxf}]);else go(nm+'.zip',zipMany([{name:nm+'.dxf',data:r.dxf}]))},30)}})();
 // ---------- bảng ký hiệu: chọn ký hiệu trụ + đèn, ghép lại rồi vẽ thêm hoặc áp cho trụ đang chọn
 const PAL={k:1,lt:'LED',nl:1};
@@ -1391,7 +1427,7 @@ function xPrint(){if(!BASE)return cmdMsg('Chờ bản đồ nền tải xong r�
  setTimeout(async()=>{let nb=0;for(let q=0;q<parts.length;q++){const r=oneDxf(parts[q]);if(!r)continue;nb+=r.n;
    const nm=ts.length===1?unacc(D.tu[ts[0]]).replace(/[\\/:*?"<>|]+/g,'-').trim():`BanVe_TL1000_${r.nt}_tu`+(parts.length>1?`_phan${q+1}`:'');
    await xSave(STANDALONE?nm+'.dxf':nm+'.zip',STANDALONE?r.dxf:zipMany([{name:nm+'.dxf',data:r.dxf}]));await new Promise(z=>setTimeout(z,400))}
-  cmdMsg(`Đã xuất ${nb} bản vẽ khung (1/1000) của ${ts.length} tủ${parts.length>1?` thành ${parts.length} file`:''}`)},30)}
+  cmdMsg(`Đã xuất ${nb} bản vẽ khung của ${ts.length} tủ${parts.length>1?` thành ${parts.length} file`:''}`)},30)}
 async function xSave(fn,data){let dl=null;if(!STANDALONE)try{dl=await window.claude.use('downloads')}catch(e){}
  if(dl){try{await dl.save({filename:fn,data})}catch(e){if(e&&e.code!=='declined')cmdMsg('Không tải được file: '+(e.message||e.code))}return}
  const bl=data instanceof Blob?data:new Blob([data],{type:'text/plain;charset=utf-8'});const u=URL.createObjectURL(bl);const a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
