@@ -29,3 +29,17 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 | base.json | Bản đồ nền |
 | app.html | Chuyển hướng link cũ về app |
 | sw.js, manifest.json, icon-*.png | Cài như ứng dụng trên điện thoại |
+
+## Lệnh vẽ nhanh (gõ ở dòng lệnh dưới bản đồ, hoặc bấm nút trên thanh công cụ)
+| Lệnh | Việc làm |
+|---|---|
+| `DT 30 G` | Dải trụ: chọn điểm đầu – cuối, tự đặt trụ cách đều ~30 m, tự đặt tên, nối cáp ngầm (`N`: nổi, `K`: không nối) |
+| `DIV 5 G` | Chia đoạn thành 5 khoảng đều, đặt trụ + nối cáp |
+| `DS HS_1` | Đánh số trụ vẽ mới: bấm lần lượt → HS_1, HS_2… (trụ hiện hữu giữ nguyên số) |
+| `M` | Dời trụ hoặc tủ điều khiển (chạm tủ → chạm vị trí mới, hoặc gõ X Y / @dx dy) |
+| `W` | Chọn vùng nhiều trụ → đổi đèn, nối cáp, đánh số, thống kê, xuất bản vẽ |
+| `LD LED` / `NC G` | Đổi loại đèn / nối cáp cho các trụ đang chọn |
+| `TK` | Thống kê trụ, đèn, cáp ngầm/nổi – tải bảng Excel |
+| `KT` / `IN` | Khung tên (người lập, ngày, SHBV) / xuất bản vẽ khung 1/1000 |
+| `LENH` | Tự tạo lệnh tắt (như LISP): `D30 = DT 30 G` |
+| `?` | Danh sách tất cả lệnh · Enter trống: lặp lại lệnh vừa dùng |
