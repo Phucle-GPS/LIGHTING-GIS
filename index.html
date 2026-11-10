@@ -96,6 +96,7 @@ select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8p
 .ktg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.ktg .fl{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)}.ktg input{font:inherit;font-size:13px;color:var(--fg)}
 #macTx{width:100%;box-sizing:border-box;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);resize:vertical}
 @media (max-width:760px){.selbar{bottom:150px}.xgrp .tb span{font-size:9px}}
+.lrot{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}.lrot .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 </style>
 <style>
 .cadbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px max(8px,env(safe-area-inset-right,0px)) 6px 8px;background:var(--panel);border-bottom:1px solid var(--line)}
@@ -380,7 +381,7 @@ let SAVED=ED.map(e=>JSON.stringify(e));
 const opt={sn:true,ngam:true,noi:true,dim:true,lab:true,br:true,long:false,lamp:true,base:true,road:true,snap:true,osnap:true};
 // ---------- dynamic model (rebuilt from base + edits)
 let P=[],N=0,PX=[],PY=[],OX=[],OY=[],PT=[],PK=[],PW=[],NEW=[],DEL=[],IDX=new Map(),S=[];
-const tmpA={};
+const tmpA={},tmpLA={};
 function rebuild(){P=[];PX=[];PY=[];OX=[];OY=[];PT=[];PK=[];PW=[];NEW=[];DEL=[];IDX=new Map();S=[];
  const add=(p,t,k,w,isNew)=>{const i=P.length;P.push(p);PT.push(t);PK.push(k);PW.push(w);NEW.push(isNew);IDX.set(p[9],i);OX.push(p[3]);OY.push(p[4]);PX.push(p[3]);PY.push(p[4]);DEL.push(false);return i};
  for(const p0 of P0){const e0=ED[p0[1]].p[p0[9]];const p=e0&&e0.name?Object.assign(p0.slice(),{0:e0.name}):p0;add(p,p[1],e0&&e0.k!=null?e0.k:kind0(p),p[15],false)}
@@ -437,7 +438,7 @@ function lampList(i){const e=pe(i);const d=(!NEW[i]&&LM.p[i])||null;
  if(e&&e.lt){if(e.lt==='NONE')return[];const n=e.nl||(d&&d[0].length)||nLamp0(i);return Array(Math.max(1,n)).fill(e.lt)}
  if(d){let c=[...d[0]].map(x=>C2T[x]||null);const kn=c.find(x=>x);c=c.map(x=>x||kn||'LED');if(e&&e.nl){while(c.length<e.nl)c.push(c[c.length-1]||'LED');c=c.slice(0,e.nl)}return c}
  if(ISCAB(PK[i]))return[];const lt=PK[i]===2?'TT':'LED';return Array((e&&e.nl)||nLamp0(i)).fill(lt)}
-function lampDraw(i){const L=lampList(i);if(!L.length)return[];if(L.every(t=>t==='TT'))return[['TT',0,0]];const A=[0,Math.PI,Math.PI/2,-Math.PI/2];return L.map((t,ix)=>[t,ix]).filter(x=>x[0]!=='TT').slice(0,4).map((x,m)=>[x[0],A[m],x[1]])}
+function lampDraw(i){const L=lampList(i);if(!L.length)return[];if(L.every(t=>t==='TT'))return[['TT',0,0]];const A=[0,Math.PI,Math.PI/2,-Math.PI/2];const la=(pe(i)||{}).la||{},tl=tmpLA[i]||{};return L.map((t,ix)=>[t,ix]).filter(x=>x[0]!=='TT').slice(0,4).map((x,m)=>{const o=tl[x[1]]??la[x[1]];return[x[0],o!=null?o*Math.PI/180:A[m],x[1]]})}
 const lampT=i=>{const L=lampList(i);if(!L.length)return'NONE';const c={};for(const t of L)c[t]=(c[t]||0)+1;return Object.keys(c).sort((a,b)=>c[b]-c[a])[0]};
 const labAng=i=>{const LD=lampDraw(i);return angOf(i)+(LD.some(x=>Math.abs(x[1]-Math.PI)<0.01)?(LD.some(x=>Math.abs(x[1]-Math.PI/2)<0.01)?-Math.PI*0.75:Math.PI/2):Math.PI)};
 function lampDesc(i){const e=pe(i)||{};const d=(!NEW[i]&&LM.p[i])||null;let s='';
@@ -717,6 +718,7 @@ cv.addEventListener('contextmenu',e=>{e.preventDefault();if(tool!=='sel'){if(T.a
 cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,[e.offsetX,e.offsetY]);moved=false;last=[e.offsetX,e.offsetY];drag=null;panBtn=e.button===1;
  if(ptrs.size===2){const[a,b]=[...ptrs.values()];startD=Math.hypot(a[0]-b[0],a[1]-b[1]);startK=k;return}
  if(e.button!==0||tool!=='sel'||!canWrite||k<0.9)return;
+ if(selL&&selL[0]===selP){const c=lampCenter(selL[0],selL[1]);if(c&&Math.hypot(sx(c[0])-e.offsetX,sy(c[1])-e.offsetY)<Math.max(14,2.4*lastS)){drag={type:'lrot',i:selL[0],ix:selL[1]};return}}
  if(selP>=0){const h=handle(selP);if(Math.hypot(h[0]-e.offsetX,h[1]-e.offsetY)<16){drag={type:'rot',i:selP};return}
   if(Math.hypot(sx(PX[selP])-e.offsetX,sy(PY[selP])-e.offsetY)<14){drag={type:'move',i:selP,dx:sx(PX[selP])-e.offsetX,dy:sy(PY[selP])-e.offsetY};return}}});
 cv.addEventListener('pointermove',e=>{mouse=[e.offsetX,e.offsetY];$('coord').textContent=`X ${(wx(e.offsetX)+D.X0).toFixed(2)}  Y ${(wy(e.offsetY)+D.Y0).toFixed(2)}`;
@@ -725,11 +727,13 @@ cv.addEventListener('pointermove',e=>{mouse=[e.offsetX,e.offsetY];$('coord').tex
  const prev=ptrs.get(e.pointerId);ptrs.set(e.pointerId,[e.offsetX,e.offsetY]);
  if(Math.abs(e.offsetX-last[0])+Math.abs(e.offsetY-last[1])>4)moved=true;
  if(drag&&ptrs.size===1){if(drag.type==='move'){PX[drag.i]=wx(e.offsetX+drag.dx);PY[drag.i]=wy(e.offsetY+drag.dy)}
+  else if(drag.type==='lrot'){let a=Math.atan2(-(e.offsetY-sy(PY[drag.i])),e.offsetX-sx(PX[drag.i]))*180/Math.PI;if(!e.shiftKey)a=Math.round(a/5)*5;const rel=((a-angDeg(drag.i))%360+360)%360;drag.r=rel;tmpLA[drag.i]={...(tmpLA[drag.i]||{}),[drag.ix]:rel};cmdMsg(`Hướng bộ đèn ${drag.ix+1}: ${fmt(((a%360)+360)%360,0)}°`)}
   else{let a=Math.atan2(-(e.offsetY-sy(PY[drag.i])),e.offsetX-sx(PX[drag.i]))*180/Math.PI;if(!e.shiftKey)a=Math.round(a/5)*5;drag.a=((a%360)+360)%360;tmpA[drag.i]=drag.a}draw();return}
  if(ptrs.size===2){const[a,b]=[...ptrs.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);zoomAt((a[0]+b[0])/2,(a[1]+b[1])/2,startK*d/startD/k);moved=true;return}
  if(moved){cv.classList.add('drag');cx-=(e.offsetX-prev[0])/k;cy+=(e.offsetY-prev[1])/k;draw()}});
 const up=e=>{ptrs.delete(e.pointerId);if(!ptrs.size)cv.classList.remove('drag');
  if(drag&&e.type==='pointerup'){const d=drag;drag=null;delete tmpA[d.i];
+  if(d.type==='lrot'){delete tmpLA[d.i];if(d.r!=null)setLampAng(d.i,d.ix,d.r);selectLamp(d.i,d.ix);return}
   if(d.type==='move'&&moved)setPole(d.i,{x:r2(PX[d.i]+D.X0),y:r2(PY[d.i]+D.Y0)});else if(d.type==='move')rebuild();
   if(d.type==='rot'&&d.a!=null)setPole(d.i,{a:d.a});
   selectPole(d.i);return}
@@ -781,15 +785,21 @@ function hitLamp(X,Y){if(!opt.lamp||k<0.9)return null;let best=null,bd=1e9;const
  for(let i=0;i<N;i++){if(!pv(i))continue;const px=sx(PX[i]),py=sy(PY[i]);if(Math.abs(px-X)>8*lastS+20||Math.abs(py-Y)>8*lastS+20)continue;
   if(Math.hypot(px-X,py-Y)<Math.max(8,1.3*lastS))continue; // bấm vào thân trụ -> chọn trụ
   for(const d of lampDraw(i)){const c=lampCenter(i,d[2]);if(!c)continue;const dd=Math.hypot(sx(c[0])-X,sy(c[1])-Y);if(dd<R0&&dd<bd){bd=dd;best=[i,d[2]]}}}return best}
+function lampAbs(i,ix){const d=lampDraw(i).find(x=>x[2]===ix);return d?Math.round((((angDeg(i)+d[1]*180/Math.PI)%360)+360)%360):Math.round(angDeg(i))}
+function setLampAng(i,ix,rel){const la={...((pe(i)||{}).la||{})};la[ix]=Math.round(rel*10)/10;setPole(i,{la})}
 function selectLamp(i,ix){selectPole(i);selL=[i,ix];const L=lampList(i),t=L[ix];const e=pe(i)||{};
  const icon=n=>symSvg([[LBLK[n],0,0,0]],34,14);
  const box=document.createElement('div');box.className='lampbox';
  box.innerHTML=`<h4>Bộ đèn ${ix+1}/${L.length} – đang là <b>${LTN[t]||t}</b></h4><p class="note">Nhầm loại đèn thì bấm ký hiệu đúng để đổi riêng bộ đèn này.</p>
   <div class="chips">${['LED','HPS','MH','TT'].map(n=>`<button type="button" class="chip ${n===t?'on':''}" data-sl="${n}" ${canWrite?'':'disabled'}>${icon(n)}<span>${LTN[n]}</span></button>`).join('')}</div>
-  <div class="row"><button class="btn" id="lAdd" ${canWrite?'':'disabled'}>Thêm 1 bộ đèn</button><button class="btn danger" id="lDel" ${canWrite?'':'disabled'}>Gỡ bộ đèn này</button><button class="btn" id="lAll" ${canWrite?'':'disabled'}>Đổi cả trụ thành ${LTN[t]||t}</button></div>`;
+  <div class="row"><button class="btn" id="lAdd" ${canWrite?'':'disabled'}>Thêm 1 bộ đèn</button><button class="btn danger" id="lDel" ${canWrite?'':'disabled'}>Gỡ bộ đèn này</button><button class="btn" id="lAll" ${canWrite?'':'disabled'}>Đổi cả trụ thành ${LTN[t]||t}</button></div>${t!=='TT'&&canWrite?`<div class="lrot"><span class="note">Hướng bộ đèn này (độ, 0° = hướng Đông, ngược chiều kim đồng hồ) – hoặc kéo trực tiếp bộ đèn trên bản đồ:</span><div class="row"><button class="btn sm" id="lR1" title="Xoay trái 15°">⟲ 15°</button><input id="lAng" type="text" inputmode="decimal" value="${lampAbs(i,ix)}" style="width:70px"><button class="btn sm" id="lAngB">Áp dụng</button><button class="btn sm" id="lR2" title="Xoay phải 15°">⟳ 15°</button>${(e.la&&e.la[ix]!=null)?'<button class="btn sm" id="lAngR">Về mặc định</button>':''}</div></div>`:''}`;
  $('info').prepend(box);
  const apply=(Ln,msg)=>{setPole(i,{lt:null,nl:null,lts:Ln});selectLamp(i,Math.min(ix,Math.max(0,Ln.length-1)));if(!Ln.length)selectPole(i);cmdMsg(msg+' – nhớ bấm Cập nhật')};
  for(const b of box.querySelectorAll('[data-sl]'))b.onclick=()=>{const Ln=lampList(i);Ln[ix]=b.dataset.sl;apply(Ln,`Đã đổi bộ đèn ${ix+1} của ${P[i][0]} thành ${LTN[b.dataset.sl]}`)};
+ if(box.querySelector('#lAngB')){const go=a=>{if(!isFinite(a))return;setLampAng(i,ix,((a-angDeg(i))%360+360)%360);selectLamp(i,ix);cmdMsg(`Đã xoay bộ đèn ${ix+1} của ${P[i][0]} về ${fmt(((a%360)+360)%360,0)}° – nhớ bấm Cập nhật`)};
+  box.querySelector('#lAngB').onclick=()=>go(parseFloat(box.querySelector('#lAng').value.replace(',','.')));box.querySelector('#lAng').onkeydown=ev=>{if(ev.key==='Enter')box.querySelector('#lAngB').click()};
+  box.querySelector('#lR1').onclick=()=>go(lampAbs(i,ix)+15);box.querySelector('#lR2').onclick=()=>go(lampAbs(i,ix)-15);
+  if(box.querySelector('#lAngR'))box.querySelector('#lAngR').onclick=()=>{const la={...((pe(i)||{}).la||{})};delete la[ix];setPole(i,{la:Object.keys(la).length?la:null});selectLamp(i,ix);cmdMsg('Bộ đèn về hướng mặc định')}}
  box.querySelector('#lAdd').onclick=()=>{const Ln=lampList(i);Ln.push(t);apply(Ln,`Đã thêm bộ đèn ${LTN[t]} cho ${P[i][0]}`)};
  box.querySelector('#lDel').onclick=()=>{const Ln=lampList(i);Ln.splice(ix,1);apply(Ln,`Đã gỡ bộ đèn ${ix+1} của ${P[i][0]}`)};
  box.querySelector('#lAll').onclick=()=>{setPole(i,{lt:t,lts:null,nl:L.length});selectPole(i);cmdMsg(`Đã đổi cả trụ ${P[i][0]} thành ${LTN[t]}`)};
@@ -1329,7 +1339,8 @@ function selBar(){let el=$('selBar');if(!el){el=document.createElement('div');el
  if(!SEL.size){el.hidden=true;return}el.hidden=false;const w=canWrite;
  el.innerHTML=`<b>${SEL.size} trụ</b>${w?['LED','HPS','MH','TT'].map(t=>`<button class="btn sm" data-x="LD ${t}">${t==='TT'?'Trang trí':t}</button>`).join('')+'<span class="sep"></span><button class="btn sm" data-x="NC G">Nối cáp ngầm</button><button class="btn sm" data-x="NC N">Nối cáp nổi</button><button class="btn sm" data-x="DSS">Đánh số</button>':''}<button class="btn sm" data-x="TK">Thống kê</button><button class="btn sm" data-x="IN">Xuất bản vẽ</button><button class="btn sm ghost" data-x="BOCHON" aria-label="Bỏ chọn">✕</button>`;
  for(const b of el.querySelectorAll('[data-x]'))b.onclick=()=>{const c=b.dataset.x;if(c==='DSS'){$('cmdIn').value='DS ';$('cmdIn').focus();cmdMsg('Gõ tên bắt đầu sau DS (vd DS HS_1) rồi Enter – đánh số theo thứ tự dọc tuyến');return}runCmd(c)}}
-function drawX(g){if(SEL.size){g.strokeStyle=C.sel;g.lineWidth=2;for(const i of SEL){if(!pv(i))continue;g.beginPath();g.arc(sx(PX[i]),sy(PY[i]),9,0,6.2832);g.stroke()}}
+function drawX(g){if(selL&&selP===selL[0]&&canWrite&&tool==='sel'){const lc=lampCenter(selL[0],selL[1]);if(lc){const X=sx(lc[0]),Y=sy(lc[1]),r=Math.max(10,2.4*lastS);g.strokeStyle=C.sel;g.lineWidth=1.6;g.setLineDash([3,3]);g.beginPath();g.arc(X,Y,r,0,6.2832);g.stroke();g.setLineDash([]);g.beginPath();g.moveTo(sx(PX[selL[0]]),sy(PY[selL[0]]));g.lineTo(X,Y);g.stroke()}}
+if(SEL.size){g.strokeStyle=C.sel;g.lineWidth=2;for(const i of SEL){if(!pv(i))continue;g.beginPath();g.arc(sx(PX[i]),sy(PY[i]),9,0,6.2832);g.stroke()}}
  const[X,Y]=mouse;
  if(tool==='win'&&T.p){const a=sx(T.p[0]),b=sy(T.p[1]);g.fillStyle=C.sel;g.globalAlpha=.08;g.fillRect(Math.min(a,X),Math.min(b,Y),Math.abs(X-a),Math.abs(Y-b));g.globalAlpha=1;g.strokeStyle=C.sel;g.setLineDash([5,4]);g.lineWidth=1.2;g.strokeRect(Math.min(a,X),Math.min(b,Y),Math.abs(X-a),Math.abs(Y-b));g.setLineDash([])}
  if((tool==='dt'||tool==='div')&&T.p){const q=snapI>=0?[PX[snapI],PY[snapI]]:[wx(X),wy(Y)];const L=Math.hypot(q[0]-T.p[0],q[1]-T.p[1]);const n=tool==='div'?Math.max(1,XS.n|0):Math.max(1,Math.round(L/Math.max(1,XS.d)));
@@ -1407,7 +1418,7 @@ function macShow(){const s=macLoad();xModal('Lệnh tắt của tôi',`<p class=
  [['Lưu lệnh tắt',()=>{const v=$('macTx').value;try{localStorage.setItem('lg_macro_v1',v)}catch(e){}MAC=macParse(v);cmdMsg(`Đã lưu ${Object.keys(MAC).length} lệnh tắt`);return true}],['Khôi phục mẫu',()=>{$('macTx').value=MDEF;return false}]]);
  if($('macHelp'))$('macHelp').onclick=helpShow;
  if($('macAdd'))$('macAdd').onclick=()=>{const tx=$('macTx');tx.value=tx.value.replace(/\s*$/,'')+`\nLENH${Object.keys(MAC).length+1} = ${HIST.slice(-6).join('; ')}`;tx.focus()}}
-function helpShow(){const R=[['TR','Thêm trụ (chạm vị trí)'],['DT 30 G','Dải trụ: chọn điểm đầu – cuối, tự đặt trụ cách đều 30 m, tự đánh tên, nối cáp ngầm (N: nổi, K: không)'],['DIV 5 G','Chia đoạn thành 5 khoảng đều, đặt trụ + nối cáp'],['DS HS_1','Đánh số trụ vẽ mới: bấm lần lượt → HS_1, HS_2… (có vùng chọn: tự đánh theo thứ tự dọc tuyến). Trụ hiện hữu giữ nguyên số'],['M','Dời trụ hoặc tủ điều khiển (chạm tủ rồi chạm vị trí mới, hoặc gõ tọa độ X Y)'],['W','Chọn vùng nhiều trụ'],['LD LED','Đổi loại đèn cho vùng chọn (LED, HPS, MH, TT, NONE)'],['NC G','Nối cáp ngầm qua các trụ đã chọn theo thứ tự dọc tuyến (NC N: cáp nổi)'],['CN / CG','Vẽ cáp nổi / ngầm từng đoạn (tự hiện chiều dài)'],['TK','Thống kê trụ, đèn, cáp – tải Excel'],['KT','Khung tên (người lập, ngày, SHBV…)'],['IN','Xuất bản vẽ khung 1/1000 (vùng chọn / tủ đang chọn / tủ đang bật)'],['M · RO · E · DI','Dời · Xoay · Xóa · Đo'],['U · REDO · S','Hoàn tác · Làm lại · Cập nhật'],['Z · F3 · Esc','Xem toàn bộ · Bắt điểm · Hủy / bỏ chọn'],['Enter (trống)','Lặp lại lệnh vừa dùng'],['LENH','Tự tạo lệnh tắt (như LISP)']];
+function helpShow(){const R=[['TR','Thêm trụ (chạm vị trí)'],['DT 30 G','Dải trụ: chọn điểm đầu – cuối, tự đặt trụ cách đều 30 m, tự đánh tên, nối cáp ngầm (N: nổi, K: không)'],['DIV 5 G','Chia đoạn thành 5 khoảng đều, đặt trụ + nối cáp'],['DS HS_1','Đánh số trụ vẽ mới: bấm lần lượt → HS_1, HS_2… (có vùng chọn: tự đánh theo thứ tự dọc tuyến). Trụ hiện hữu giữ nguyên số'],['Kéo bộ đèn','Trụ nhiều đèn: bấm chọn 1 bộ đèn rồi kéo để xoay riêng bộ đèn đó (giữ Shift: xoay tự do), hoặc gõ số độ trong khung thông tin'],['M','Dời trụ hoặc tủ điều khiển (chạm tủ rồi chạm vị trí mới, hoặc gõ tọa độ X Y)'],['W','Chọn vùng nhiều trụ'],['LD LED','Đổi loại đèn cho vùng chọn (LED, HPS, MH, TT, NONE)'],['NC G','Nối cáp ngầm qua các trụ đã chọn theo thứ tự dọc tuyến (NC N: cáp nổi)'],['CN / CG','Vẽ cáp nổi / ngầm từng đoạn (tự hiện chiều dài)'],['TK','Thống kê trụ, đèn, cáp – tải Excel'],['KT','Khung tên (người lập, ngày, SHBV…)'],['IN','Xuất bản vẽ khung 1/1000 (vùng chọn / tủ đang chọn / tủ đang bật)'],['M · RO · E · DI','Dời · Xoay · Xóa · Đo'],['U · REDO · S','Hoàn tác · Làm lại · Cập nhật'],['Z · F3 · Esc','Xem toàn bộ · Bắt điểm · Hủy / bỏ chọn'],['Enter (trống)','Lặp lại lệnh vừa dùng'],['LENH','Tự tạo lệnh tắt (như LISP)']];
  xModal('Danh sách lệnh',`<table class="tk hl">${R.map(([a,b])=>`<tr><td><code>${a}</code></td><td>${b}</td></tr>`).join('')}</table>${Object.keys(MAC).length?`<p class="note">Lệnh tắt của bạn: ${Object.entries(MAC).map(([k,v])=>`<code>${esc(k)}</code> = ${esc(v)}`).join(' · ')}</p>`:''}`)}
 // ---- hộp thoại dùng chung
 function xModal(title,html,btns){let m=$('xm');if(!m){m=document.createElement('div');m.id='xm';m.className='xm';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');document.body.appendChild(m);m.addEventListener('click',e=>{if(e.target===m)m.hidden=true})}

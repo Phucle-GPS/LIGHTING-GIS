@@ -36,6 +36,7 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 | `DT 30 G` | Dải trụ: chọn điểm đầu – cuối, tự đặt trụ cách đều ~30 m, tự đặt tên, nối cáp ngầm (`N`: nổi, `K`: không nối) |
 | `DIV 5 G` | Chia đoạn thành 5 khoảng đều, đặt trụ + nối cáp |
 | `DS HS_1` | Đánh số trụ vẽ mới: bấm lần lượt → HS_1, HS_2… (trụ hiện hữu giữ nguyên số) |
+| Kéo bộ đèn | Trụ 2 đèn trở lên: bấm chọn 1 bộ đèn rồi kéo để xoay riêng (hoặc gõ số độ trong khung thông tin) |
 | `M` | Dời trụ hoặc tủ điều khiển (chạm tủ → chạm vị trí mới, hoặc gõ X Y / @dx dy) |
 | `W` | Chọn vùng nhiều trụ → đổi đèn, nối cáp, đánh số, thống kê, xuất bản vẽ |
 | `LD LED` / `NC G` | Đổi loại đèn / nối cáp cho các trụ đang chọn |
