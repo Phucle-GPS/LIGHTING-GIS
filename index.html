@@ -97,6 +97,7 @@ select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8p
 #macTx{width:100%;box-sizing:border-box;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);resize:vertical}
 @media (max-width:760px){.selbar{bottom:150px}.xgrp .tb span{font-size:9px}}
 .lrot{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}.lrot .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.nmed{position:absolute;z-index:6;min-width:140px;padding:4px 8px;font:600 13px "Be Vietnam Pro",system-ui,sans-serif;border:2px solid var(--acc);border-radius:6px;background:var(--panel);color:var(--fg);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 </style>
 <style>
 .cadbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px max(8px,env(safe-area-inset-right,0px)) 6px 8px;background:var(--panel);border-bottom:1px solid var(--line)}
@@ -661,7 +662,7 @@ function handle(i){const a=angOf(i),d=5.75*lastS;return[sx(PX[i])+Math.cos(a)*d,
 // tool: sel | move | rot | pole | cab | noi | ngam | erase | dist
 let tool='sel',T={},mouse=[0,0],snapI=-1;
 const TOOLS={me:'Vị trí của tôi',sel:'Chọn',move:'Dời (M)',rot:'Xoay (RO)',pole:'Thêm trụ (TR)',cab:'Thêm tủ (TU)',noi:'Cáp nổi (CN)',ngam:'Cáp ngầm (CG)',erase:'Xóa (E)',dist:'Đo (DI)'};
-const PROMPT={me:'Chạm vào bản đồ tại chỗ bạn đang đứng (Esc: hủy):',sel:'Chọn đối tượng · gõ lệnh (? xem tất cả): TR, DT, DS, W, CN, CG, TK, KT, IN',move:'Chọn trụ hoặc tủ điều khiển cần dời:',rot:'Chọn trụ cần xoay:',pole:'Chạm vị trí đặt trụ mới (Esc: kết thúc):',cab:'Chạm vị trí đặt tủ điều khiển:',noi:'Chọn trụ/tủ bắt đầu cáp nổi:',ngam:'Chọn trụ/tủ bắt đầu cáp ngầm:',erase:'Chọn trụ hoặc đoạn cáp cần xóa:',dist:'Chọn điểm thứ nhất:'};
+const PROMPT={me:'Chạm vào bản đồ tại chỗ bạn đang đứng (Esc: hủy):',sel:'Chọn đối tượng · gõ lệnh (? xem tất cả): TR, DT, DS, W, CN, CG, TK, KT, IN',move:'Chọn trụ hoặc tủ điều khiển cần dời:',rot:'Chọn trụ cần xoay:',pole:'Chạm vị trí đặt trụ mới (Esc: kết thúc):',cab:'Chạm vị trí đặt tủ điều khiển:',noi:'Cáp nổi: bấm hoặc kéo-thả từ trụ này sang trụ kia (Enter / Esc: kết thúc):',ngam:'Cáp ngầm: bấm hoặc kéo-thả từ trụ này sang trụ kia (Enter / Esc: kết thúc):',erase:'Chọn trụ hoặc đoạn cáp cần xóa:',dist:'Chọn điểm thứ nhất:'};
 function setTool(t){if(!canWrite&&!['sel','dist','me','win'].includes(t)){cmdMsg('Bạn chỉ có quyền xem');t='sel'}tool=t;T={};for(const b of document.querySelectorAll('[data-tool]'))b.classList.toggle('on',b.dataset.tool===t);
  $('cmdP').textContent=PROMPT[t];cv.style.cursor=t==='sel'?'':'crosshair';$('newOpt').hidden=!(t==='pole'||t==='cab'||t==='dt'||t==='div');if(typeof renderPal==='function'&&$('pal'))renderPal();draw()}
 let cmT=0;function cmdMsg(m){const el=$('cmdLog');el.classList.remove('fade');el.textContent=m;clearTimeout(cmT);if(m)cmT=setTimeout(()=>{el.classList.add('fade');setTimeout(()=>{if(el.classList.contains('fade'))el.textContent=''},450)},6000)}
@@ -669,6 +670,10 @@ function hitPole(X,Y,R=14){let best=-1,bd=R;for(let i=0;i<N;i++){if(!pv(i))conti
 function hitSeg(X,Y,R=8){let bs=-1,bd=R;for(let j=0;j<S.length;j++){const s=S[j];if(!pv(s.a)||sdel(s))continue;if(s.f===2&&!opt.long)continue;if(s.f===1&&!opt.br)continue;
  const ax=sx(PX[s.a]),ay=sy(PY[s.a]),bx=sx(PX[s.b]),by=sy(PY[s.b]);const vx=bx-ax,vy=by-ay,L=vx*vx+vy*vy;if(!L)continue;let t=((X-ax)*vx+(Y-ay)*vy)/L;t=Math.max(0,Math.min(1,t));const d=Math.hypot(ax+t*vx-X,ay+t*vy-Y);if(d<bd){bd=d;bs=j}}return bs}
 function drawTool(g){const[X,Y]=mouse;drawX(g);
+ if(selS>=0&&S[selS]&&tool==='sel'&&canWrite){const sg=S[selS];for(const i of[sg.a,sg.b]){const a=sx(PX[i]),b=sy(PY[i]);g.fillStyle='#2f7cf6';g.strokeStyle='#fff';g.lineWidth=1.5;g.fillRect(a-5,b-5,10,10);g.strokeRect(a-5,b-5,10,10)}}
+ if(drag&&(drag.type==='cable'||drag.type==='grip')){const f=drag.type==='cable'?drag.a:drag.fix;const ty=drag.type==='cable'?drag.ty:stype(S[drag.j]);const a=[sx(PX[f]),sy(PY[f])],b=snapI>=0?[sx(PX[snapI]),sy(PY[snapI])]:[X,Y];
+  g.strokeStyle=ty?C.noi:C.ngam;g.lineWidth=2.2;g.setLineDash(ty?[]:[7,4]);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();g.setLineDash([]);label(g,`${fmt(Math.hypot((b[0]-a[0])/k,(b[1]-a[1])/k))} m`,b[0]+12,b[1]-12);
+  if(snapI>=0){g.strokeStyle=C.snap;g.lineWidth=2;g.strokeRect(b[0]-8,b[1]-8,16,16)}}
  if(snapI>=0&&tool!=='sel'){const a=sx(PX[snapI]),b=sy(PY[snapI]);g.strokeStyle=C.snap;g.lineWidth=2;g.strokeRect(a-8,b-8,16,16)}
  if(T.a!=null&&(tool==='noi'||tool==='ngam')){const a=[sx(PX[T.a]),sy(PY[T.a])],b=snapI>=0?[sx(PX[snapI]),sy(PY[snapI])]:[X,Y];g.strokeStyle=tool==='noi'?C.noi:C.ngam;g.lineWidth=2;g.setLineDash(tool==='ngam'?[7,4]:[]);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();g.setLineDash([]);
   label(g,`${fmt(Math.hypot((b[0]-a[0])/k,(b[1]-a[1])/k))} m`,b[0]+12,b[1]-12)}
@@ -689,6 +694,11 @@ function addPole(x,y,kindSel){const nb=nearestPole(x,y);const t=$('newTu').value
  if(!ISCAB(kd)&&typeof edgeTarget==='function'&&BASE){const r=edgeTarget(x,y,0.5);if(r){if(r.median)a=Math.round(r.a);else if(r.d<12){x=r.x;y=r.y;a=Math.round(r.a)}}}
  op([t],()=>{const o={x:r2(x+D.X0),y:r2(y+D.Y0),a,k:kd,name,w,at:Date.now()};if(lk)o.lk=lk;if(!ISCAB(kd)){o.lt=PAL.lt;if(PAL.nl>1&&PAL.lt!=='TT'&&PAL.lt!=='NONE')o.nl=PAL.nl}ED[t].np[id]=o});
  const i=IDX.get(id);cmdMsg(`Đã thêm ${ISCAB(kd)?KIND[kd]:comboName(kd,PAL.lt,PAL.nl)} "${name}"${lk?' (tăng cường cho '+lk+')':''} vào tủ ${D.tu[t]} – nhớ bấm Cập nhật`);return i}
+function regrip(j,fix,to,end){const s=S[j];if(to===fix)return;if(S.some(q=>!sdel(q)&&((q.a===fix&&q.b===to)||(q.a===to&&q.b===fix)))){cmdMsg('Hai trụ này đã có cáp nối');draw();return}
+ const ty=stype(s),t=PT[fix],[A,B]=end==='a'?[to,fix]:[fix,to];
+ op([s.tu,t],()=>{if(s.nw)delete ED[s.tu].ns[s.key];else ED[s.tu].s[s.key]={...(ED[s.tu].s[s.key]||{}),del:true};ED[t].ns[ID(A)+'>'+ID(B)]={a:ID(A),b:ID(B),t:ty}});
+ const nj=S.findIndex(q=>!sdel(q)&&q.nw&&((q.a===A&&q.b===B)));if(nj>=0)selectSeg(nj);else clearSel();
+ cmdMsg(`Đã nối lại cáp ${P[A][0]} → ${P[B][0]} (${fmt(Math.hypot(PX[B]-PX[A],PY[B]-PY[A]))} m) – nhớ bấm Cập nhật`);draw()}
 function addSeg(a,b,typ){if(a===b)return;const t=PT[a];const key=ID(a)+'>'+ID(b);
  if(S.some(s=>!sdel(s)&&((s.a===a&&s.b===b)||(s.a===b&&s.b===a)))){cmdMsg('Hai trụ này đã có cáp nối');return}
  op([t],()=>{ED[t].ns[key]={a:ID(a),b:ID(b),t:typ}});cmdMsg(`Đã vẽ cáp ${typ?'nổi':'ngầm'} ${P[a][0]} → ${P[b][0]} (${fmt(Math.hypot(PX[b]-PX[a],PY[b]-PY[a]))} m)`)}
@@ -718,7 +728,9 @@ const ptrs=new Map();let moved=false,startD=0,startK=0,last=null,drag=null,panBt
 cv.addEventListener('contextmenu',e=>{e.preventDefault();if(tool!=='sel'){if(T.a!=null||T.i!=null||T.p){T={};$('cmdP').textContent=PROMPT[tool]}else setTool('sel');draw()}});
 cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,[e.offsetX,e.offsetY]);moved=false;last=[e.offsetX,e.offsetY];drag=null;panBtn=e.button===1;
  if(ptrs.size===2){const[a,b]=[...ptrs.values()];startD=Math.hypot(a[0]-b[0],a[1]-b[1]);startK=k;return}
+ if(e.button===0&&canWrite&&(tool==='noi'||tool==='ngam')){const hp=hitPole(e.offsetX,e.offsetY,14);if(hp>=0){drag={type:'cable',a:hp,ty:tool==='noi'?1:0};return}}
  if(e.button!==0||tool!=='sel'||!canWrite||k<0.9)return;
+ if(selS>=0&&S[selS]&&!sdel(S[selS])){const sg=S[selS];for(const[end,i]of[['a',sg.a],['b',sg.b]])if(Math.hypot(sx(PX[i])-e.offsetX,sy(PY[i])-e.offsetY)<12){drag={type:'grip',j:selS,end,fix:end==='a'?sg.b:sg.a};return}}
  if(selL&&selL[0]===selP){const c=lampCenter(selL[0],selL[1]);if(c&&Math.hypot(sx(c[0])-e.offsetX,sy(c[1])-e.offsetY)<Math.max(14,2.4*lastS)){drag={type:'lrot',i:selL[0],ix:selL[1]};return}}
  if(selP>=0){const h=handle(selP);if(Math.hypot(h[0]-e.offsetX,h[1]-e.offsetY)<16){drag={type:'rot',i:selP};return}
   if(Math.hypot(sx(PX[selP])-e.offsetX,sy(PY[selP])-e.offsetY)<14){drag={type:'move',i:selP,dx:sx(PX[selP])-e.offsetX,dy:sy(PY[selP])-e.offsetY};return}}});
@@ -727,12 +739,18 @@ cv.addEventListener('pointermove',e=>{mouse=[e.offsetX,e.offsetY];$('coord').tex
  if(!ptrs.has(e.pointerId)){if(needDraw)draw();return}
  const prev=ptrs.get(e.pointerId);ptrs.set(e.pointerId,[e.offsetX,e.offsetY]);
  if(Math.abs(e.offsetX-last[0])+Math.abs(e.offsetY-last[1])>4)moved=true;
+ if(drag&&ptrs.size===1&&(drag.type==='cable'||drag.type==='grip')){const ex=drag.type==='cable'?drag.a:drag.fix;const h=hitPole(e.offsetX,e.offsetY,14);snapI=h>=0&&h!==ex?h:-1;if(Math.abs(e.offsetX-last[0])+Math.abs(e.offsetY-last[1])>4)moved=true;draw();return}
  if(drag&&ptrs.size===1){if(drag.type==='move'){PX[drag.i]=wx(e.offsetX+drag.dx);PY[drag.i]=wy(e.offsetY+drag.dy)}
   else if(drag.type==='lrot'){let a=Math.atan2(-(e.offsetY-sy(PY[drag.i])),e.offsetX-sx(PX[drag.i]))*180/Math.PI;if(!e.shiftKey)a=Math.round(a/5)*5;const rel=((a-angDeg(drag.i))%360+360)%360;drag.r=rel;tmpLA[drag.i]={...(tmpLA[drag.i]||{}),[drag.ix]:rel};cmdMsg(`Hướng bộ đèn ${drag.ix+1}: ${fmt(((a%360)+360)%360,0)}°`)}
   else{let a=Math.atan2(-(e.offsetY-sy(PY[drag.i])),e.offsetX-sx(PX[drag.i]))*180/Math.PI;if(!e.shiftKey)a=Math.round(a/5)*5;drag.a=((a%360)+360)%360;tmpA[drag.i]=drag.a}draw();return}
  if(ptrs.size===2){const[a,b]=[...ptrs.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);zoomAt((a[0]+b[0])/2,(a[1]+b[1])/2,startK*d/startD/k);moved=true;return}
  if(moved){cv.classList.add('drag');cx-=(e.offsetX-prev[0])/k;cy+=(e.offsetY-prev[1])/k;draw()}});
 const up=e=>{ptrs.delete(e.pointerId);if(!ptrs.size)cv.classList.remove('drag');
+ if(drag&&(drag.type==='cable'||drag.type==='grip')){const d=drag;drag=null;const tgt=snapI;snapI=-1;
+  if(e.type!=='pointerup'){draw();return}
+  if(d.type==='cable'){if(!moved){toolClick(e.offsetX,e.offsetY);return}if(tgt>=0){addSeg(d.a,tgt,d.ty);T.a=tgt;$('cmdP').textContent='Kéo tiếp từ trụ khác, hoặc Enter / Esc để kết thúc lệnh:'}else cmdMsg('Thả đúng vào trụ hoặc tủ (ô vuông bắt điểm) để nối cáp');draw();return}
+  if(!moved||tgt<0){if(moved)cmdMsg('Thả điểm cáp đúng vào một trụ/tủ khác');draw();return}
+  regrip(d.j,d.fix,tgt,d.end);return}
  if(drag&&e.type==='pointerup'){const d=drag;drag=null;delete tmpA[d.i];
   if(d.type==='lrot'){delete tmpLA[d.i];if(d.r!=null)setLampAng(d.i,d.ix,d.r);selectLamp(d.i,d.ix);return}
   if(d.type==='move'&&moved)setPole(d.i,{x:r2(PX[d.i]+D.X0),y:r2(PY[d.i]+D.Y0)});else if(d.type==='move')rebuild();
@@ -759,7 +777,7 @@ $('bSnapT').onclick=()=>{opt.osnap=!opt.osnap;$('bSnapT').classList.toggle('on',
 {const s=$('newTu');[...Array(nT).keys()].sort((a,b)=>D.tu[a].localeCompare(D.tu[b],'vi')).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=D.tu[t];s.appendChild(o)})}
 // ---------- command line (AutoCAD style)
 const CMD={TR:'pole',PO:'pole',POINT:'pole',TU:'cab',CN:'noi',L:'noi',LINE:'noi',PL:'noi',CG:'ngam',M:'move',MOVE:'move',RO:'rot',ROTATE:'rot',E:'erase',ERASE:'erase',DEL:'erase',DI:'dist',DIST:'dist',SEL:'sel'};
-function runCmd(raw){$('cmdIn').value='';if(xCmd(raw))return;const c=raw.trim().toUpperCase();if(!c){if(tool!=='sel'){T={};setTool(tool)}return}
+function runCmd(raw){$('cmdIn').value='';if(!raw.trim()&&tool!=='sel'){T={};setTool('sel');cmdMsg('Kết thúc lệnh');return}if(xCmd(raw))return;const c=raw.trim().toUpperCase();if(!c)return;
  if(tool==='rot'&&T.i!=null&&/^-?\d+(\.\d+)?$/.test(c)){const i=T.i;setPole(i,{a:((+c%360)+360)%360});selectPole(i);cmdMsg(`Đã xoay ${c}°`);T={};$('cmdP').textContent=PROMPT.rot;return}
  if(tool==='move'&&T.i!=null){const n=c.replace(/^@/,'').replace(/;/g,' ').trim().split(/[\s,]+/).map(Number);if(n.length>=2&&n.every(isFinite)){const i=T.i;const[x,y]=c.startsWith('@')?[PX[i]+D.X0+n[0],PY[i]+D.Y0+n[1]]:n;setPole(i,{x:r2(x),y:r2(y)});selectPole(i);T={};$('cmdP').textContent=PROMPT.move;cmdMsg('Đã dời trụ theo tọa độ');return}}
  if(tool==='move'&&T.cab!=null){const n=c.replace(/^@/,'').replace(/;/g,' ').trim().split(/[\s,]+/).map(Number);const cb=cabOf(T.cab);if(n.length>=2&&n.every(isFinite)&&cb){const[x,y]=c.startsWith('@')?[cb[0]+D.X0+n[0],cb[1]+D.Y0+n[1]]:n;moveCab(T.cab,x,y);T={};$('cmdP').textContent=PROMPT.move;return}}
@@ -774,8 +792,9 @@ document.addEventListener('keydown',e=>{const tg=e.target;const typing=tg.tagNam
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'&&!typing){e.preventDefault();redo();return}
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();saveAll();return}
  if(typing)return;
- if(e.key==='Escape'){if(T.a!=null||T.i!=null||T.p){T={};$('cmdP').textContent=PROMPT[tool]}else setTool('sel');$('cmdIn').value='';draw();return}
+ if(e.key==='Escape'){if(drag&&(drag.type==='cable'||drag.type==='grip')){drag=null;snapI=-1;draw();return}T={};setTool('sel');$('cmdIn').value='';draw();return}
  if(e.key==='F3'){e.preventDefault();$('bSnapT').click();return}
+ if(e.key==='Enter'&&tg.id!=='cmdIn'&&tool!=='sel'){e.preventDefault();runCmd('');return}
  if(e.key==='Delete'&&tg.id!=='cmdIn'&&canWrite){if(selP>=0)erasePole(selP);else if(selS>=0)eraseSeg(selS);return}
  if(tg.id!=='cmdIn'&&e.key.length===1&&/[a-zA-Z0-9@.\-]/.test(e.key)&&!e.ctrlKey&&!e.metaKey&&!e.altKey){$('cmdIn').focus()}});
 // ---------- info panels
@@ -808,7 +827,7 @@ function selectLamp(i,ix){selectPole(i);selL=[i,ix];const L=lampList(i),t=L[ix];
 function selectPole(i,zoom){if(i==null||i<0)return;selP=i;selS=-1;selL=null;const p=P[i],e=pe(i)||{};$('infoSec').hidden=false;const lt=lampT(i);const isNew=NEW[i];
  const moved=!isNew&&e.x!=null,snapped=!isNew&&!moved&&opt.snap&&p[14];const sc=isNew?'':D.ph[p[8]];const old=p[16];const ang=((angDeg(i))%360+360)%360;
  $('info').innerHTML=`<h3>${esc(p[0])}${isNew?' <small class="tag">vẽ thêm</small>':''}</h3>
-  ${isNew&&canWrite?`<label class="fl">Tên<span class="row"><input id="inName" type="text" value="${esc(p[0])}"><button class="btn" id="bName">Đổi tên</button></span></label>`:''}
+  ${canWrite?`<label class="fl">Tên<span class="row"><input id="inName" type="text" value="${esc(p[0])}"><button class="btn" id="bName">Đổi tên</button></span></label>`:''}
   <dl class="kv"><dt>Loại</dt><dd>${KIND[PK[i]]}</dd>
   <dt>Phường mới</dt><dd><b>${esc(WARDS[PW[i]])}</b></dd>${isNew?'':`<dt>Phường cũ (theo ranh)</dt><dd>${esc(old)}</dd>`}${sc&&old&&!old.startsWith(sc.split(',')[0]+',')?`<dt>Smart City ghi</dt><dd class="warn">${esc(sc)}</dd>`:''}${!isNew&&p[17]?`<dt>Cần kiểm tra</dt><dd class="warn">${esc(p[17])}</dd>`:''}
   <dt>Tủ</dt><dd>${esc(D.tu[PT[i]])}</dd>${isNew?'':`<dt>Tuyến</dt><dd>${esc(D.tuy[p[2]])}</dd><dt>Loại trụ (SC)</dt><dd>${esc(D.lt[p[6]])||'—'}</dd><dt>Đường</dt><dd>${esc(D.duong[p[7]])}</dd>`}
@@ -1458,7 +1477,7 @@ function macShow(){const s=macLoad();xModal('Lệnh tắt của tôi',`<p class=
  [['Lưu lệnh tắt',()=>{const v=$('macTx').value;try{localStorage.setItem('lg_macro_v1',v)}catch(e){}MAC=macParse(v);cmdMsg(`Đã lưu ${Object.keys(MAC).length} lệnh tắt`);return true}],['Khôi phục mẫu',()=>{$('macTx').value=MDEF;return false}]]);
  if($('macHelp'))$('macHelp').onclick=helpShow;
  if($('macAdd'))$('macAdd').onclick=()=>{const tx=$('macTx');tx.value=tx.value.replace(/\s*$/,'')+`\nLENH${Object.keys(MAC).length+1} = ${HIST.slice(-6).join('; ')}`;tx.focus()}}
-function helpShow(){const R=[['TR','Thêm trụ (chạm vị trí)'],['DT 30 G','Dải trụ: chọn điểm đầu – cuối, tự đặt trụ cách đều 30 m, tự đánh tên, nối cáp ngầm (N: nổi, K: không)'],['DIV 5 G','Chia đoạn thành 5 khoảng đều, đặt trụ + nối cáp'],['DS HS_1','Đánh số trụ vẽ mới: bấm lần lượt → HS_1, HS_2… (có vùng chọn: tự đánh theo thứ tự dọc tuyến). Trụ hiện hữu giữ nguyên số'],['Kéo bộ đèn','Trụ nhiều đèn: bấm chọn 1 bộ đèn rồi kéo để xoay riêng bộ đèn đó (giữ Shift: xoay tự do), hoặc gõ số độ trong khung thông tin'],['MEP 0.5','(Trụ hiện hữu đã được dời + xoay tự động sẵn; trụ vẽ mới bằng TR/DT cũng tự vào mép) Dời lại trụ vào mép đường: giữ phía trái/phải theo tim đường, lấy mép gần nhất cùng phía, cách mép 0,5 m về phía vỉa hè (áp cho vùng chọn / trụ đang chọn / cả tủ đang chọn)'],['M','Dời trụ hoặc tủ điều khiển (chạm tủ rồi chạm vị trí mới, hoặc gõ tọa độ X Y)'],['W','Chọn vùng nhiều trụ'],['LD LED','Đổi loại đèn cho vùng chọn (LED, HPS, MH, TT, NONE)'],['NC G','Nối cáp ngầm qua các trụ đã chọn theo thứ tự dọc tuyến (NC N: cáp nổi)'],['CN / CG','Vẽ cáp nổi / ngầm từng đoạn (tự hiện chiều dài)'],['TK','Thống kê trụ, đèn, cáp – tải Excel'],['KT','Khung tên (người lập, ngày, SHBV…)'],['IN','Xuất bản vẽ khung 1/1000 (vùng chọn / tủ đang chọn / tủ đang bật)'],['M · RO · E · DI','Dời · Xoay · Xóa · Đo'],['U · REDO · S','Hoàn tác · Làm lại · Cập nhật'],['Z · F3 · Esc','Xem toàn bộ · Bắt điểm · Hủy / bỏ chọn'],['Enter (trống)','Lặp lại lệnh vừa dùng'],['LENH','Tự tạo lệnh tắt (như LISP)']];
+function helpShow(){const R=[['TR','Thêm trụ (chạm vị trí)'],['DT 30 G','Dải trụ: chọn điểm đầu – cuối, tự đặt trụ cách đều 30 m, tự đánh tên, nối cáp ngầm (N: nổi, K: không)'],['DIV 5 G','Chia đoạn thành 5 khoảng đều, đặt trụ + nối cáp'],['DS HS_1','Đánh số trụ vẽ mới: bấm lần lượt → HS_1, HS_2… (có vùng chọn: tự đánh theo thứ tự dọc tuyến). Trụ hiện hữu giữ nguyên số'],['Kéo bộ đèn','Trụ nhiều đèn: bấm chọn 1 bộ đèn rồi kéo để xoay riêng bộ đèn đó (giữ Shift: xoay tự do), hoặc gõ số độ trong khung thông tin'],['MEP 0.5','(Trụ hiện hữu đã được dời + xoay tự động sẵn; trụ vẽ mới bằng TR/DT cũng tự vào mép) Dời lại trụ vào mép đường: giữ phía trái/phải theo tim đường, lấy mép gần nhất cùng phía, cách mép 0,5 m về phía vỉa hè (áp cho vùng chọn / trụ đang chọn / cả tủ đang chọn)'],['Nhấp đúp','Nhấp đúp vào trụ để sửa tên ngay trên bản đồ (Enter: lưu, Esc: hủy)'],['M','Dời trụ hoặc tủ điều khiển (chạm tủ rồi chạm vị trí mới, hoặc gõ tọa độ X Y)'],['W','Chọn vùng nhiều trụ'],['LD LED','Đổi loại đèn cho vùng chọn (LED, HPS, MH, TT, NONE)'],['NC G','Nối cáp ngầm qua các trụ đã chọn theo thứ tự dọc tuyến (NC N: cáp nổi)'],['CN / CG','Vẽ cáp nổi / ngầm: bấm nối tiếp hoặc kéo-thả từ trụ sang trụ (tự hiện chiều dài). Enter / Esc / Space: kết thúc lệnh'],['Grip cáp','Chọn 1 đoạn cáp → kéo ô vuông xanh ở đầu/cuối cáp thả vào trụ khác để nối lại'],['TK','Thống kê trụ, đèn, cáp – tải Excel'],['KT','Khung tên (người lập, ngày, SHBV…)'],['IN','Xuất bản vẽ khung 1/1000 (vùng chọn / tủ đang chọn / tủ đang bật)'],['M · RO · E · DI','Dời · Xoay · Xóa · Đo'],['U · REDO · S','Hoàn tác · Làm lại · Cập nhật'],['Z · F3 · Esc','Xem toàn bộ · Bắt điểm · Hủy / bỏ chọn'],['Enter (trống)','Lặp lại lệnh vừa dùng'],['LENH','Tự tạo lệnh tắt (như LISP)']];
  xModal('Danh sách lệnh',`<table class="tk hl">${R.map(([a,b])=>`<tr><td><code>${a}</code></td><td>${b}</td></tr>`).join('')}</table>${Object.keys(MAC).length?`<p class="note">Lệnh tắt của bạn: ${Object.entries(MAC).map(([k,v])=>`<code>${esc(k)}</code> = ${esc(v)}`).join(' · ')}</p>`:''}`)}
 // ---- hộp thoại dùng chung
 function xModal(title,html,btns){let m=$('xm');if(!m){m=document.createElement('div');m.id='xm';m.className='xm';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');document.body.appendChild(m);m.addEventListener('click',e=>{if(e.target===m)m.hidden=true})}
@@ -1541,6 +1560,15 @@ function mepRun(off){if(!canWrite)return cmdMsg('Bạn chỉ có quyền xem');i
  cmdMsg(`Đã dời ${mv.length} trụ vào mép đường, xoay đèn ${mv.length+rot.length} trụ ra mặt đường/hẻm (lệch mép ${fmt(off,1)} m, dời TB ${fmt(avg,1)} m; ${L0+R0?`${L0} trụ bên trái, ${R0} trụ bên phải tim đường`:'theo mép gần nhất'})${far?` · bỏ qua ${far} trụ cách mép > 12 m`:''}${mid?` · giữ nguyên ${mid} trụ giữa đường/dải phân cách`:''} – Hoàn tác (U) nếu chưa đúng, nhớ bấm Cập nhật`);if(selP>=0)selectPole(selP);draw()}
 window.__autoAll=(off=0.5)=>{const out=[];for(let i=0;i<P0.length;i++){const r=edgeTarget(OX[i],OY[i],off,routeDir(i,1));if(!r){out.push(null);continue}if(r.median){out.push([0,0,Math.round(r.a),1]);continue}if(r.d>12){out.push(null);continue}out.push([r2(r.x-OX[i]),r2(r.y-OY[i]),Math.round(r.a),0])}return out};
 window.__tim=i=>{if(!TG)TG=gridOf(BASE.tim);let m=1e9;for(const s of segsNear(TG,BASE.tim,PX[i],PY[i],100)){const c=closest(PX[i],PY[i],s);m=Math.min(m,c.d)}return[m,BASE.tim.length,segsNear(TG,BASE.tim,PX[i],PY[i],100).length,TG.size,Array.from(BASE.tim[0].b),PX[i],PY[i],Array.from(BASE.edge[0].b)]};
+// ---- nhấp đúp vào trụ để sửa tên ngay trên bản đồ
+cv.addEventListener('dblclick',e=>{if(tool!=='sel')return;const i=hitPole(e.offsetX,e.offsetY,14);if(i<0)return;e.preventDefault();
+ if(!canWrite)return cmdMsg('Bạn chỉ có quyền xem');if(typeof tuEditable==='function'&&!tuEditable(PT[i]))return cmdMsg(`Tài khoản của bạn không được sửa tủ ${D.tu[PT[i]]}`);
+ let ed=$('nmEd');if(!ed){ed=document.createElement('input');ed.id='nmEd';ed.className='nmed';ed.type='text';ed.autocomplete='off';ed.spellcheck=false;cv.parentNode.appendChild(ed)}
+ const old=String(P[i][0]);ed.value=old;ed.style.left=(sx(PX[i])+12)+'px';ed.style.top=(sy(PY[i])-14)+'px';ed.hidden=false;ed.focus();ed.select();selectPole(i);
+ const done=ok=>{if(ed.hidden)return;ed.hidden=true;const v=ed.value.trim();if(!ok||!v||v===old)return;
+  const dup=P.findIndex((p,j)=>j!==i&&!DEL[j]&&String(p[0])===v);setPole(i,{name:v});selectPole(i);
+  cmdMsg(`Đã đổi tên trụ "${old}" → "${v}"${dup>=0?' (trùng tên với một trụ khác – kiểm tra lại)':''} – nhớ bấm Cập nhật`)};
+ ed.onkeydown=ev=>{ev.stopPropagation();if(ev.key==='Enter')done(true);else if(ev.key==='Escape')done(false)};ed.onblur=()=>done(true)});
 
 // ---------- init
 colors();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{colors();draw()});
