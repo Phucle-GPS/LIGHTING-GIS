@@ -46,3 +46,11 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 | `KT` / `IN` | Khung tên (người lập, ngày, SHBV) / xuất bản vẽ khung 1/1000 |
 | `LENH` | Tự tạo lệnh tắt (như LISP): `D30 = DT 30 G` |
 | `?` | Danh sách tất cả lệnh · Enter trống: lặp lại lệnh vừa dùng |
+
+## Lệnh kiểu AutoCAD (F1 trong app để xem đầy đủ)
+- Vẽ: L, C, A, REC, POL, EL, PL, H, BO
+- Sửa: CO/CP, M, E, TR, EX, O, RO, SC, F, CHA, MI, AR, X
+- Quản lý: LA, OP, UN, PR/Ctrl+1, Z, P, RE
+- Kích thước & chữ: D, DLI, DAL, DRA, DDI, MT, DT
+- Phím: Ctrl+O/S/Z/Y, F1, F2, F3, F7, F8, F9, F10, ESC
+- Đổi tên lệnh cũ: thêm trụ = TRU (hoặc PO); dải trụ = DTR; cáp = CN/CG
