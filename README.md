@@ -49,7 +49,7 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 
 ## Lệnh kiểu AutoCAD (F1 trong app để xem đầy đủ)
 - Vẽ: L, C, A, REC, POL, EL, PL, H, BO
-- Sửa: CO/CP, M, E, TR, EX, O, RO, SC, F, CHA, MI, AR, X
+- Sửa: CO/CP, M, E, TR, EX, O, RO, SC, F, CHA, MI, AR, X, MA (quét thuộc tính – cả nền bản đồ, trụ, cáp; S: thiết lập; NEN0: trả nền về gốc)
 - Quản lý: LA, OP, UN, PR/Ctrl+1, Z, P, RE
 - Kích thước & chữ: D, DLI, DAL, DRA, DDI, MT, DT
 - Phím: Ctrl+O/S/Z/Y, F1, F2, F3, F7, F8, F9, F10, ESC

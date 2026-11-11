@@ -594,18 +594,20 @@ function drawSym(g,name,X,Y,ang,s){const Sy=SYM[name];if(!Sy)return;const c=Math
 let BASE=null;
 fetch('base.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(b=>{const dec=a=>a.map(e=>{const p=new Float32Array(e.length);let x=0,y=0,x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(let q=0;q<e.length;q+=2){x+=e[q];y+=e[q+1];const X=x/10,Y=y/10;p[q]=X;p[q+1]=Y;if(X<x0)x0=X;if(X>x1)x1=X;if(Y<y0)y0=Y;if(Y>y1)y1=Y}return{p,b:[x0,y0,x1,y1]}});
  BASE={edge:dec(b.edge),tim:dec(b.tim),river:dec(b.river),ward:dec(b.ward||[]),text:b.text.filter(t=>t[0]!=='xa').map(t=>({k:t[0],x:t[1]/10,y:t[2]/10,h:t[3],r:t[4]*Math.PI/180,s:t[5]})),wtext:(b.wtext||[]).map(t=>({s:'Phường '+t[0],x:t[1]/10,y:t[2]/10}))};
- for(const t of BASE.text)t.hem=/^(hẻm|h\.|kiệt|ngõ)/i.test(t.s);BASE.text.sort((a,b)=>(a.hem-b.hem)||(b.h-a.h));SNC.clear();SEGC.clear();EG=null;$('baseNote').textContent=`Bản đồ nền: ${b.edge.length.toLocaleString('vi-VN')} mép đường/hẻm, ${b.text.length.toLocaleString('vi-VN')} tên đường; ranh và tên 5 phường mới.`;draw()})
+ for(const t of BASE.text)t.hem=/^(hẻm|h\.|kiệt|ngõ)/i.test(t.s);BASE.text.sort((a,b)=>(a.hem-b.hem)||(b.h-a.h));BASE.text.forEach((t,i)=>t.ix=i);SNC.clear();SEGC.clear();EG=null;$('baseNote').textContent=`Bản đồ nền: ${b.edge.length.toLocaleString('vi-VN')} mép đường/hẻm, ${b.text.length.toLocaleString('vi-VN')} tên đường; ranh và tên 5 phường mới.`;draw()})
  .catch(()=>{$('baseNote').textContent='Không tải được bản đồ nền.'});
 function drawBase(g,x0,y0,x1,y1){if(!BASE||!opt.base)return;
  const L=(arr,col,w,dash,minK)=>{if(k<minK)return;g.strokeStyle=col;g.lineWidth=w;g.setLineDash(dash);g.beginPath();
-  for(const o of arr){const b=o.b;if(b[2]<x0||b[0]>x1||b[3]<y0||b[1]>y1)continue;const p=o.p;g.moveTo(sx(p[0]),sy(p[1]));for(let q=2;q<p.length;q+=2)g.lineTo(sx(p[q]),sy(p[q+1]))}g.stroke();g.setLineDash([])};
+  const OV=[],kd=Object.keys(BASE).find(q=>BASE[q]===arr),bo=typeof bgo==='function'?bgo:()=>null;
+  arr.forEach((o,i)=>{const b=o.b;if(b[2]<x0||b[0]>x1||b[3]<y0||b[1]>y1)return;const v=bo(kd,i);if(v){if(!v.hide)OV.push([o,v.c||col]);return}const p=o.p;g.moveTo(sx(p[0]),sy(p[1]));for(let q=2;q<p.length;q+=2)g.lineTo(sx(p[q]),sy(p[q+1]))});g.stroke();
+  for(const[o,c]of OV){g.strokeStyle=c;g.lineWidth=w*1.4;g.beginPath();const p=o.p;g.moveTo(sx(p[0]),sy(p[1]));for(let q=2;q<p.length;q+=2)g.lineTo(sx(p[q]),sy(p[q+1]));g.stroke()}g.setLineDash([])};
  L(BASE.river,C.river,1.2,[],0);L(BASE.tim,C.tim,1,[6,4],0.6);L(BASE.edge,C.edge,k>2?1.2:0.8,[],0.05);g.globalAlpha=.75;L(BASE.ward,C.ward,k>1?2:1.3,[10,4,2,4],0);g.globalAlpha=1;
  g.textAlign='center';g.textBaseline='middle';
- if(opt.road){const RP=[];for(const t of BASE.text){if(t.x<x0||t.x>x1||t.y<y0||t.y>y1)continue;const hem=t.hem;if(k<(hem?1.6:0.5))continue;const fs=Math.max(hem?10:11,Math.min(t.h*k,hem?14:17));
+ if(opt.road){const RP=[];for(const t of BASE.text){const tv=typeof bgo==='function'&&t.ix!=null?bgo('text',t.ix):null;if(tv&&tv.hide)continue;if(t.x<x0||t.x>x1||t.y<y0||t.y>y1)continue;const hem=t.hem;if(k<(hem?1.6:0.5))continue;const fs=Math.max(hem?10:11,Math.min(t.h*k,hem?14:17));
   g.font=`500 ${fs}px Arial,"Be Vietnam Pro",sans-serif`;const tw_=g.measureText(t.s).width,cs_=Math.abs(Math.cos(t.r)),sn_=Math.abs(Math.sin(t.r)),hw=(tw_*cs_+fs*sn_)/2+2,hh=(tw_*sn_+fs*cs_)/2+2,X_=sx(t.x),Y_=sy(t.y);
   if(RP.some(b=>Math.abs(b[0]-X_)<b[2]+hw&&Math.abs(b[1]-Y_)<b[3]+hh))continue;RP.push([X_,Y_,hw,hh]);
   g.save();g.translate(X_,Y_);let r=-t.r;if(Math.cos(r)<0)r+=Math.PI;g.rotate(r);g.font=`500 ${fs}px Arial,"Be Vietnam Pro",sans-serif`;
-  g.fillStyle=t.k==='rtext'?C.river:C.road;g.lineWidth=3;g.strokeStyle=C['txt-halo'];g.strokeText(t.s,0,0);g.fillText(t.s,0,0);g.restore()}}
+  g.fillStyle=tv&&tv.c?tv.c:t.k==='rtext'?C.river:C.road;g.lineWidth=3;g.strokeStyle=C['txt-halo'];g.strokeText(t.s,0,0);g.fillText(t.s,0,0);g.restore()}}
  if(k>=0.06&&k<1.5){const placed=[];g.font=`600 ${k<0.2?10.5:12}px "Be Vietnam Pro",sans-serif`;g.textAlign='center';g.textBaseline='middle';
   for(const t of BASE.wtext){const X=sx(t.x),Y=sy(t.y);if(X<-50||X>W+50||Y<-20||Y>H+20)continue;const s=t.s.replace(/^Phường /,'').toUpperCase(),wd=g.measureText(s).width+8,bx=[X-wd/2,Y-9,X+wd/2,Y+9];
    if(placed.some(b=>b[0]<bx[2]&&bx[0]<b[2]&&b[1]<bx[3]&&bx[1]<b[3]))continue;placed.push(bx);
@@ -1045,7 +1047,7 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
   w(0,'ENDBLK');w(8,0)}w(0,'ENDSEC');
  w(0,'SECTION');w(2,'ENTITIES');
  // POLYLINE: cờ 128 = nét đứt chạy liên tục qua các đỉnh (không bị liền nét ở đoạn ngắn); wd = bề rộng nét (0,3 m ở 1/1000 = 0,3 mm như mẫu)
- const pl=(lay,xs,closed,wd,gen)=>{if(xs.length<4)return;w(0,'POLYLINE');w(8,lay);w(66,1);w(10,0);w(20,0);w(30,0);w(70,(closed?1:0)|(gen?128:0));if(wd){w(40,wd);w(41,wd)}for(let q=0;q<xs.length;q+=2){w(0,'VERTEX');w(8,lay);w(10,X(xs[q]));w(20,Y(xs[q+1]));w(30,0)}w(0,'SEQEND');w(8,lay)};
+ const pl=(lay,xs,closed,wd,gen,cc)=>{if(xs.length<4)return;w(0,'POLYLINE');w(8,lay);if(cc)w(62,cc);w(66,1);w(10,0);w(20,0);w(30,0);w(70,(closed?1:0)|(gen?128:0));if(wd){w(40,wd);w(41,wd)}for(let q=0;q<xs.length;q+=2){w(0,'VERTEX');w(8,lay);w(10,X(xs[q]));w(20,Y(xs[q+1]));w(30,0)}w(0,'SEQEND');w(8,lay)};
  const txt=(lay,x,y,h,rot,str,h72,h73,sty)=>{w(0,'TEXT');w(8,lay);w(10,X(x));w(20,Y(y));w(30,0);w(40,(+h).toFixed(3));w(1,dxfStr(str));if(rot)w(50,(+rot).toFixed(2));w(7,sty||'ARIAL');if(h72||h73){w(72,h72);w(11,X(x));w(21,Y(y));w(31,0);w(73,h73)}};
  // khung
  const NF=!!center[3];
@@ -1067,8 +1069,8 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
  // nền bản đồ trong khung
  const rects=NF?[[-1e9,-1e9,1e9,1e9]]:FR.clip.map(c=>[MX(c[0]),MY(c[1]),MX(c[2]),MY(c[3])]);
  const CR=corridor(t);
- if(BASE){for(const[kind,lay]of[['edge','HTGT_LINE'],['tim','HT_GT_TIM'],['river','SONG_RACH'],['ward','RANH_PHUONG_MOI']])for(const o of BASE[kind])for(const r of rects){if(o.b[2]<r[0]||o.b[0]>r[2]||o.b[3]<r[1]||o.b[1]>r[3])continue;if(o.b[2]<CR.bb[0]||o.b[0]>CR.bb[2]||o.b[3]<CR.bb[1]||o.b[1]>CR.bb[3])continue;const res=[];clipPoly(o.p,r,res);for(const xs of res)for(const ys of CR.cut(xs,kind==='ward'?CR.D*0.6:CR.D))pl(lay,ys,false,0,lay==='RANH_PHUONG_MOI')}
-  const DP=[];for(const tx of BASE.text){if(!rects.some(r=>tx.x>=r[0]&&tx.x<=r[2]&&tx.y>=r[1]&&tx.y<=r[3]))continue;if(!CR.near(tx.x,tx.y,CR.D+6))continue;{const hh=Math.max(2.5,tx.h),ww=tx.s.length*hh*0.62,c_=Math.abs(Math.cos(tx.r)),s_=Math.abs(Math.sin(tx.r)),bw=(ww*c_+hh*s_)/2,bh=(ww*s_+hh*c_)/2;if(DP.some(b=>Math.abs(b[0]-tx.x)<b[2]+bw&&Math.abs(b[1]-tx.y)<b[3]+bh))continue;DP.push([tx.x,tx.y,bw,bh])}let a=((tx.r*180/Math.PI)%360+360)%360;if(a>90&&a<=270)a-=180;txt('TEN_DUONG',tx.x,tx.y,Math.max(2.5,tx.h)*Math.max(1,s),a,tx.s,1,2,'ARIAL')}}
+ if(BASE){for(const[kind,lay]of[['edge','HTGT_LINE'],['tim','HT_GT_TIM'],['river','SONG_RACH'],['ward','RANH_PHUONG_MOI']])for(const[oi,o]of BASE[kind].entries()){const bv=typeof bgo==='function'?bgo(kind,oi):null;if(bv&&bv.hide)continue;const ly=bv&&bv.la?LNM(bv.la):lay,bc=bv&&bv.c?aci(bv.c):0;for(const r of rects){if(o.b[2]<r[0]||o.b[0]>r[2]||o.b[3]<r[1]||o.b[1]>r[3])continue;if(o.b[2]<CR.bb[0]||o.b[0]>CR.bb[2]||o.b[3]<CR.bb[1]||o.b[1]>CR.bb[3])continue;const res=[];clipPoly(o.p,r,res);for(const xs of res)for(const ys of CR.cut(xs,kind==='ward'?CR.D*0.6:CR.D))pl(ly,ys,false,0,lay==='RANH_PHUONG_MOI',bc)}}
+  const DP=[];for(const tx of BASE.text){const tv=typeof bgo==='function'?bgo('text',tx.ix):null;if(tv&&tv.hide)continue;if(!rects.some(r=>tx.x>=r[0]&&tx.x<=r[2]&&tx.y>=r[1]&&tx.y<=r[3]))continue;if(!CR.near(tx.x,tx.y,CR.D+6))continue;{const hh=Math.max(2.5,tx.h),ww=tx.s.length*hh*0.62,c_=Math.abs(Math.cos(tx.r)),s_=Math.abs(Math.sin(tx.r)),bw=(ww*c_+hh*s_)/2,bh=(ww*s_+hh*c_)/2;if(DP.some(b=>Math.abs(b[0]-tx.x)<b[2]+bw&&Math.abs(b[1]-tx.y)<b[3]+bh))continue;DP.push([tx.x,tx.y,bw,bh])}let a=((tx.r*180/Math.PI)%360+360)%360;if(a>90&&a<=270)a-=180;txt(tv&&tv.la?LNM(tv.la):'TEN_DUONG',tx.x,tx.y,Math.max(2.5,tx.h)*Math.max(1,s),a,tx.s,1,2,'ARIAL')}}
  // đèn, trụ, cáp của tủ
  const ins=(blk,layer,x,y,a,sc)=>{const Sy=SYMR[blk],c=Math.cos(a),sn=Math.sin(a);const ix=x,iy=y;
   w(0,'INSERT');w(8,layer);w(2,BN(blk));w(10,X(ix));w(20,Y(iy));w(30,0);w(41,sc);w(42,sc);w(43,1);if(a)w(50,(((a*180/Math.PI)%360)+360)%360)};
@@ -1964,7 +1966,7 @@ function dwOpen(){const inp=document.createElement('input');inp.type='file';inp.
 const ACI=[[1,'#ff0000'],[2,'#ffff00'],[3,'#00ff00'],[4,'#00ffff'],[5,'#0000ff'],[6,'#ff00ff'],[7,'#ffffff'],[8,'#808080'],[30,'#ff7f00'],[40,'#ffbf00'],[140,'#00a0c0'],[150,'#007fff'],[210,'#ff00bf']];
 const aci=h=>{if(!h||!/^#[0-9a-f]{6}$/i.test(h))return 7;const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);let best=7,bd=1e9;for(const[n,c]of ACI){const d=(parseInt(c.slice(1,3),16)-r)**2+(parseInt(c.slice(3,5),16)-g)**2+(parseInt(c.slice(5,7),16)-b)**2;if(d<bd){bd=d;best=n}}return best};
 const LNM=n=>'VE_'+String(n).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[đĐ]/g,'D').replace(/[^A-Za-z0-9_-]/g,'_').slice(0,28);
-function dwLayFor(t){const d=ED[t]&&ED[t].dr;if(!d)return[];const s=new Set();for(const id in d)s.add(d[id].la);return[...s].map(n=>[LNM(n),aci(layOf(n).c),'CONTINUOUS'])}
+function dwLayFor(t){const d=ED[t]&&ED[t].dr;const s=new Set();if(typeof BGO!=='undefined')for(const q in BGO)if(BGO[q].la)s.add(BGO[q].la);if(d)for(const id in d)s.add(d[id].la);return[...s].map(n=>[LNM(n),aci(layOf(n).c),'CONTINUOUS'])}
 function dwDxf(t,w,X,Y,txt,inR){const d=ED[t]&&ED[t].dr;if(!d)return;for(const id in d){const e=d[id];if(!layOf(e.la).on)continue;if(inR){const q=ePts(e).flat();let ok=false;for(let i=0;i<q.length&&!ok;i+=2)ok=inR(q[i],q[i+1]);if(!ok)continue}const ly=LNM(e.la),cc=e.c?aci(e.c):0;const hd=ty=>{w(0,ty);w(8,ly);if(cc)w(62,cc)};
  const pl=(p,cl)=>{hd('POLYLINE');w(66,1);w(10,0);w(20,0);w(30,0);w(70,cl?1:0);for(let i=0;i<p.length;i+=2){w(0,'VERTEX');w(8,ly);w(10,X(p[i]));w(20,Y(p[i+1]));w(30,0)}w(0,'SEQEND');w(8,ly)};
  const ln=(a,b,c,d_)=>{hd('LINE');w(10,X(a));w(20,Y(b));w(30,0);w(11,X(c));w(21,Y(d_));w(31,0)};
@@ -2037,13 +2039,70 @@ function dwCmd(raw){const s=raw.trim();if(tool==='dw'&&DW.cur){if(!s)return fals
 setTimeout(dwStat,0);
 
 helpShow=function(){const G=[['Vẽ (Draw)',[['L','Đường thẳng'],['PL','Đa tuyến (C khép kín)'],['C','Đường tròn (2P/3P)'],['A','Cung tròn 3 điểm'],['REC','Hình chữ nhật'],['POL','Đa giác đều'],['EL','Elip'],['H','Tô vật liệu (SOLID/ANSI31/CROSS)'],['BO','Đường ranh giới khép kín']]],
- ['Hiệu chỉnh (Modify)',[['CO / CP','Sao chép (đối tượng vẽ hoặc trụ)'],['M','Di chuyển'],['E','Xóa'],['TR','Cắt xén (đối tượng vẽ hoặc cáp)'],['EX','Kéo dài tới biên'],['O','Offset song song / đồng tâm'],['RO','Xoay'],['SC','Tỉ lệ'],['F','Bo góc (R: bán kính)'],['CHA','Vát góc (D: khoảng vát)'],['MI','Đối xứng'],['AR','Mảng hàng × cột'],['X','Phá khối']]],
+ ['Hiệu chỉnh (Modify)',[['CO / CP','Sao chép (đối tượng vẽ hoặc trụ)'],['M','Di chuyển'],['E','Xóa'],['TR','Cắt xén (đối tượng vẽ hoặc cáp)'],['EX','Kéo dài tới biên'],['O','Offset song song / đồng tâm'],['RO','Xoay'],['SC','Tỉ lệ'],['F','Bo góc (R: bán kính)'],['CHA','Vát góc (D: khoảng vát)'],['MI','Đối xứng'],['AR','Mảng hàng × cột'],['X','Phá khối'],['MA','Quét thuộc tính (đối tượng vẽ, nền, trụ, cáp; S: thiết lập)'],['NEN0','Trả nền về màu gốc']]],
  ['Quản lý (Setup)',[['LA','Lớp (layer)'],['OP','Tùy chọn'],['UN','Đơn vị'],['PR / Ctrl+1','Thuộc tính'],['Z','Zoom (E/P/cửa sổ)'],['P','Pan'],['RE','Làm mới']]],
  ['Kích thước & chữ',[['D','Kiểu kích thước'],['DLI','Kích thước ngang/đứng'],['DAL','Kích thước xiên'],['DRA','Bán kính'],['DDI','Đường kính'],['MT','Văn bản nhiều dòng'],['DT','Văn bản một dòng']]],
  ['Chiếu sáng',[['TRU','Thêm trụ'],['TU','Thêm tủ'],['CN / CG','Cáp nổi / ngầm'],['DTR 30 G','Dải trụ cách đều'],['DIV 5 G','Chia trụ'],['DS HS_1','Đánh số trụ mới'],['W','Chọn vùng'],['LD · NC · MEP','Đổi đèn · nối cáp · dời vào mép'],['BR','Ngắt cáp'],['TK · KT · IN','Thống kê · khung tên · xuất bản vẽ'],['DI','Đo'],['U · S','Hoàn tác · Cập nhật'],['LENH','Lệnh tắt tự tạo']]],
  ['Phím',[['Ctrl+N / O / S','Mới · Mở DXF · Lưu'],['Ctrl+Z / Y','Hoàn tác · Làm lại'],['F1 · F2','Trợ giúp · Lịch sử lệnh'],['F3','OSNAP'],['F7 · F8','Lưới · ORTHO'],['F9 · F10','SNAP · POLAR'],['Enter / Space','Kết thúc / lặp lệnh'],['Esc','Hủy lệnh']]]];
  xModal('Danh sách lệnh (gõ như AutoCAD)',`<div class="hlg">${G.map(([t,R])=>`<div><h3 class="palh">${t}</h3><table class="tk hl">${R.map(([a,b])=>`<tr><td><code>${a}</code></td><td>${b}</td></tr>`).join('')}</table></div>`).join('')}</div>
  <p class="note">Nhập tọa độ: <code>x,y</code> (VN-2000) · <code>@dx,dy</code> · <code>@dài&lt;góc</code> · gõ số = độ dài theo hướng chuột. ${Object.keys(MAC).length?'Lệnh tắt riêng: '+Object.entries(MAC).map(([k_,v])=>`<code>${esc(k_)}</code>=${esc(v)}`).join(' · '):''}</p>`)};
+// ===== MATCHPROP (MA): quét thuộc tính từ đối tượng nguồn sang đối tượng vẽ, nền bản đồ, trụ, cáp
+let BGO=(()=>{try{return JSON.parse(localStorage.getItem('lg_bgo_v1')||'{}')}catch(e){return{}}})();
+const bgoKeep=()=>{try{localStorage.setItem('lg_bgo_v1',JSON.stringify(BGO))}catch(e){}};
+const BGN={edge:'mép đường/hẻm',tim:'tim đường',river:'sông rạch',ward:'ranh phường',text:'tên đường'};
+const BGL={edge:'HTGT_LINE',tim:'HT_GT_TIM',river:'SONG_RACH',ward:'RANH_PHUONG_MOI',text:'TEN_DUONG'};
+const bgDef=kind=>({edge:C.edge,tim:C.tim,river:C.river,ward:C.ward,text:C.road})[kind];
+const bgo=(kind,i)=>{const o=BGO[kind+':'+i];return o&&o.la&&!layOf(o.la).on?{hide:1}:o};
+let MAS=(()=>{try{return Object.assign({la:1,c:1,txt:1,hat:1,dim:1,den:1,cap:1},JSON.parse(localStorage.getItem('lg_mas_v1')||'{}'))}catch(e){return{la:1,c:1,txt:1,hat:1,dim:1,den:1,cap:1}}})();
+const BGKINDS=()=>!BASE||!opt.base?[]:['edge','tim','river','ward'].concat(opt.road?['text']:[]);
+function txtHit(t,x,y){const fs=Math.max(t.hem?10:11,Math.min(t.h*k,t.hem?14:17)),hw=t.s.length*fs*.3/k,hh=fs*.6/k,dx=x-t.x,dy=y-t.y,u=dx*Math.cos(t.r)+dy*Math.sin(t.r),v=-dx*Math.sin(t.r)+dy*Math.cos(t.r);return Math.abs(u)<hw&&Math.abs(v)<hh}
+function bgHit(X,Y,R=7){const x=wx(X),y=wy(Y),r=R/k;let best=null,bd=R;
+ for(const kind of BGKINDS()){if(kind==='text'){BASE.text.forEach((t,i)=>{if(k<(t.hem?1.6:.5))return;if(Math.abs(t.x-x)<80&&Math.abs(t.y-y)<80&&txtHit(t,x,y)&&bd>0){bd=0;best={kind,i}}});continue}
+  BASE[kind].forEach((o,i)=>{const b=o.b;if(b[2]<x-r||b[0]>x+r||b[3]<y-r||b[1]>y+r)return;const p=o.p;for(let q=0;q+3<p.length;q+=2){const d=segD(x,y,p[q],p[q+1],p[q+2],p[q+3])*k;if(d<bd){bd=d;best={kind,i}}}})}return best}
+function bgPush(){UNDO.push({bgo:JSON.stringify(BGO)});if(UNDO.length>200)UNDO.shift();REDO.length=0}
+{const _u=undo,_r=redo;
+ undo=function(){const u=UNDO[UNDO.length-1];if(u&&u.bgo!=null){UNDO.pop();REDO.push({bgo:JSON.stringify(BGO)});BGO=JSON.parse(u.bgo);bgoKeep();draw();cmdMsg('Đã hoàn tác (thuộc tính nền)');return}return _u()};
+ redo=function(){const r=REDO[REDO.length-1];if(r&&r.bgo!=null){REDO.pop();UNDO.push({bgo:JSON.stringify(BGO)});BGO=JSON.parse(r.bgo);bgoKeep();draw();cmdMsg('Đã làm lại');return}return _r()}}
+function maSrc(X,Y){const kd=dwHit(X,Y);if(kd){const e=dGet(kd);return{k:'dr',e,la:e.la,c:e.c||'',col:entCol(e),nm:'đối tượng vẽ (lớp '+e.la+')'}}
+ const pi=hitPole(X,Y);if(pi>=0){const L=lampList(pi);return{k:'pole',i:pi,sp:!L.length?{lt:'NONE'}:L.every(x=>x===L[0])?{lt:L[0],nl:L.length}:{lts:L},nm:'trụ '+P[pi][0]+' ('+(L.length?L.length+' đèn '+[...new Set(L)].join('+'):'không đèn')+')'}}
+ const sj=hitSeg(X,Y);if(sj>=0){const t=stype(S[sj]);return{k:'seg',t,nm:'cáp '+(t?'nổi':'ngầm')}}
+ const b=bgHit(X,Y);if(b){const o=BGO[b.kind+':'+b.i];return{k:'bg',kind:b.kind,la:o&&o.la||BGL[b.kind],col:o&&o.c||bgDef(b.kind),def:!o,nm:'nền: '+BGN[b.kind]}}return null}
+function laEnsure(n,col){if(!LAYS.find(l=>l.n===n)){LAYS.push({n,c:col||'',on:1});layKeep();if(typeof dwStat==='function')dwStat()}}
+function maApply(src,T){let n=0;
+ if(src.k==='dr'||src.k==='bg'){
+  if(T.dr.length){if(MAS.la&&src.k==='bg')laEnsure(src.la,src.col);
+   dwMod(T.dr,e=>{if(MAS.la)e.la=src.la;if(MAS.c){if(src.k==='dr'){if(src.c)e.c=src.c;else delete e.c}else e.c=src.col}
+    const s=src.e;if(s){if(MAS.txt&&e.ty==='T'&&s.ty==='T'){e.h=s.h;if(s.mt!=null&&e.mt!=null)e.mt=s.mt}if(MAS.dim&&e.ty==='D'&&s.ty==='D'&&s.h)e.h=s.h;if(MAS.hat&&e.ty==='H'&&s.ty==='H'){e.pat=s.pat;e.sc=s.sc}}return e});n+=T.dr.length}
+  if(T.bg.length){bgPush();for(const b of T.bg){const key=b.kind+':'+b.i,o={...(BGO[key]||{})};
+    if(src.k==='bg'&&src.def&&src.kind===b.kind){delete BGO[key];continue}
+    if(MAS.la)o.la=src.la;if(MAS.c)o.c=src.col;if(o.la===BGL[b.kind])delete o.la;if(Object.keys(o).length)BGO[key]=o;else delete BGO[key]}bgoKeep();n+=T.bg.length}}
+ else if(src.k==='pole'&&MAS.den){const L=T.pole.filter(i=>i!==src.i&&!ISCAB(PK[i]));if(L.length){op([...new Set(L.map(i=>PT[i]))],()=>{for(const i of L){const t=PT[i],id=ID(i),tg=NEW[i]?ED[t].np:ED[t].p,e={...(tg[id]||{})};delete e.lt;delete e.lts;delete e.nl;tg[id]=Object.assign(e,JSON.parse(JSON.stringify(src.sp)))}});n+=L.length}}
+ else if(src.k==='seg'&&MAS.cap){const L=T.seg.filter(j=>stype(S[j])!==src.t);if(L.length){op([...new Set(L.map(j=>S[j].tu))],()=>{for(const j of L){const s=S[j];if(s.nw)ED[s.tu].ns[s.key].t=src.t;else{const e=ED[s.tu].s[s.key]={...(ED[s.tu].s[s.key]||{}),t:src.t};if(e.t===s.t0)delete e.t;if(!Object.keys(e).length)delete ED[s.tu].s[s.key]}}});n+=L.length}}
+ draw();return n}
+function maWin(src,a,b){const x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]),y0=Math.min(a[1],b[1]),y1=Math.max(a[1],b[1]),cross=b[0]<a[0],T={dr:[],bg:[],pole:[],seg:[]};
+ const inn=(x,y)=>x>=x0&&x<=x1&&y>=y0&&y<=y1,test=ps=>{let all=true,any=false;for(let i=0;i<ps.length;i+=2){const q=inn(ps[i],ps[i+1]);all=all&&q;any=any||q}return cross?any:all};
+ if(src.k==='dr'||src.k==='bg'){dwEach((e,t,id)=>{if(test(ePts(e).flat()))T.dr.push(dKey(t,id))});
+  for(const kind of BGKINDS()){if(kind==='text'){BASE.text.forEach((t,i)=>{if(inn(t.x,t.y))T.bg.push({kind,i})});continue}
+   BASE[kind].forEach((o,i)=>{const bb_=o.b;if(bb_[2]<x0||bb_[0]>x1||bb_[3]<y0||bb_[1]>y1)return;if(test(o.p))T.bg.push({kind,i})})}}
+ else if(src.k==='pole'){for(let i=0;i<N;i++)if(pv(i)&&inn(PX[i],PY[i]))T.pole.push(i)}
+ else for(let j=0;j<S.length;j++){const s=S[j];if(!pv(s.a)||sdel(s)||s.f===2)continue;const A=inn(PX[s.a],PY[s.a]),B=inn(PX[s.b],PY[s.b]);if(cross?A||B:A&&B)T.seg.push(j)}return T}
+function maSet(){const it=[['la','Lớp (Layer)'],['c','Màu'],['txt','Chữ: chiều cao'],['dim','Kích thước: chiều cao chữ'],['hat','Hatch: mẫu + tỉ lệ'],['den','Trụ: loại + số bộ đèn'],['cap','Cáp: nổi / ngầm']];
+ xModal('Thuộc tính được quét (MATCHPROP · S)',`<div class="ktg">${it.map(([k_,l])=>`<label class="fl" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" data-ms="${k_}" ${MAS[k_]?'checked':''}>${l}</label>`).join('')}</div>`,
+ [['Lưu',()=>{for(const el of document.querySelectorAll('[data-ms]'))MAS[el.dataset.ms]=el.checked?1:0;try{localStorage.setItem('lg_mas_v1',JSON.stringify(MAS))}catch(e){}return true}]])}
+function cmdMatch(){return{pr:'MATCHPROP · chọn đối tượng nguồn (đối tượng vẽ, nền bản đồ, trụ hoặc cáp) – S: thiết lập:',src:null,
+ click(pt,X,Y){if(!this.src){const s=maSrc(X,Y);if(!s){cmdMsg('Không có đối tượng tại điểm bấm');return}this.src=s;this.tell();return}
+  if(this.w0){const T=maWin(this.src,this.w0,pt);this.w0=null;const n=maApply(this.src,T);cmdMsg(n?`Đã quét thuộc tính sang ${n} đối tượng`:'Không có đối tượng phù hợp trong cửa sổ');this.tell();return}
+  const s=this.src,T={dr:[],bg:[],pole:[],seg:[]};
+  if(s.k==='dr'||s.k==='bg'){const kd=dwHit(X,Y);if(kd)T.dr.push(kd);else{const b=bgHit(X,Y);if(b)T.bg.push(b)}}
+  else if(s.k==='pole'){const i=hitPole(X,Y);if(i>=0)T.pole.push(i)}else{const j=hitSeg(X,Y);if(j>=0)T.seg.push(j)}
+  if(T.dr.length+T.bg.length+T.pole.length+T.seg.length){const n=maApply(s,T);cmdMsg(n?'Đã quét thuộc tính':'Đối tượng đã cùng thuộc tính');return}this.w0=pt;dwPr('MATCHPROP · góc thứ 2 của cửa sổ (kéo sang trái = chọn giao):')},
+ tell(){dwPr(`MATCHPROP · nguồn: ${this.src.nm} → bấm đối tượng đích hoặc 2 góc cửa sổ để quét (S: thiết lập, Enter/Esc: kết thúc):`)},
+ input(s){const u=s.toUpperCase();if(u==='S'||u==='SETTINGS'){maSet();return true}return false},
+ preview(g,p){if(this.w0&&p){const a=sx(this.w0[0]),b=sy(this.w0[1]),X=sx(p.x),Y=sy(p.y);g.strokeStyle=X<a?'#13a37c':'#2f7cf6';g.setLineDash(X<a?[5,3]:[]);g.strokeRect(Math.min(a,X),Math.min(b,Y),Math.abs(X-a),Math.abs(Y-b));g.setLineDash([])}}}}
+Object.assign(DCMD,{MA:cmdMatch,MATCHPROP:cmdMatch,PAINTER:cmdMatch});
+$('bUndo').onclick=()=>undo();$('bRedo').onclick=()=>redo();
+window.__ma={bgHit,maApply,maSrc,n:()=>Object.keys(BGO).length,poles(){const r=[];for(let i=0;i<N&&r.length<3;i++)if(pv(i)&&!ISCAB(PK[i])){const X=sx(PX[i]),Y=sy(PY[i]);if(X>50&&X<1350&&Y>50&&Y<850)r.push([i,X,Y,lampList(i).join('+')])}return r},lamp:i=>lampList(i).join('+')};
+{const _xc=xCmd;xCmd=function(raw){const u=raw.trim().toUpperCase();if(u==='NEN0'||u==='MA0'){if(!Object.keys(BGO).length){cmdMsg('Nền chưa có thuộc tính quét nào');return true}bgPush();BGO={};bgoKeep();draw();cmdMsg('Đã trả nền bản đồ về màu/lớp gốc (U để hoàn tác)');return true}return _xc(raw)}}
 
 // ---------- init
 colors();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{colors();draw()});
