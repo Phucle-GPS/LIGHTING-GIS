@@ -37,6 +37,8 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 | `DIV 5 G` | Chia đoạn thành 5 khoảng đều, đặt trụ + nối cáp |
 | `DS HS_1` | Đánh số trụ vẽ mới: bấm lần lượt → HS_1, HS_2… (trụ hiện hữu giữ nguyên số) |
 | Kéo bộ đèn | Trụ 2 đèn trở lên: bấm chọn 1 bộ đèn rồi kéo để xoay riêng (hoặc gõ số độ trong khung thông tin) |
+| Tự động | Trụ hiện hữu đã được dời sát mép đường và xoay đèn ra mặt đường/hẻm; trụ vẽ mới (TR, DT) cũng tự vào mép |
+| `MEP 0.5` | Dời lại trụ vào mép đường gần nhất (giữ bên trái/phải theo tim đường, trụ giữa đường giữ nguyên), cách mép 0,5 m |
 | `M` | Dời trụ hoặc tủ điều khiển (chạm tủ → chạm vị trí mới, hoặc gõ X Y / @dx dy) |
 | `W` | Chọn vùng nhiều trụ → đổi đèn, nối cáp, đánh số, thống kê, xuất bản vẽ |
 | `LD LED` / `NC G` | Đổi loại đèn / nối cáp cho các trụ đang chọn |
