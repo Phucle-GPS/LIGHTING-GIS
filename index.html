@@ -99,6 +99,7 @@ select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8p
 .lrot{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}.lrot .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .nmed{position:absolute;z-index:6;min-width:140px;padding:4px 8px;font:600 13px "Be Vietnam Pro",system-ui,sans-serif;border:2px solid var(--acc);border-radius:6px;background:var(--panel);color:var(--fg);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .dwstat{display:flex;gap:3px;align-items:center;flex-wrap:nowrap;flex:none}@media (max-width:760px){.dwstat .dwb{padding:1px 4px;font-size:9px}#dwLay{display:none}}.dwb{font:600 10px system-ui,sans-serif;padding:2px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--mut);cursor:pointer}.dwb.on{color:var(--acc);border-color:var(--acc)}#dwLay{font-size:11px;padding:0 4px;height:20px;max-width:110px}.hlg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.palnote{font-size:11px;color:var(--muted,#8a948f);margin:2px 0 6px;line-height:1.35}
 </style>
 <style>
 .cadbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px max(8px,env(safe-area-inset-right,0px)) 6px 8px;background:var(--panel);border-bottom:1px solid var(--line)}
@@ -1176,21 +1177,23 @@ function renderPal(){const el=$('pal');if(!el)return;
  const chip=(attr,v,on,svg,lab)=>`<button type="button" class="chip ${on?'on':''}" ${attr}="${v}" aria-pressed="${on}">${svg}<span>${lab}</span></button>`;
  const K=[1,0,6,2,3],L=['LED','HPS','MH','TT','NONE'];
  const QC=[[1,'LED','STK + LED'],[0,'HPS','BT + HPS'],[1,'HPS','STK + HPS'],[0,'LED','BT + LED']];
- el.innerHTML=`<div class="palh">Ghép sẵn theo khung chú thích</div><div class="chips">${QC.map(([k,lt,n])=>chip('data-pq',k+','+lt,PAL.k===k&&PAL.lt===lt&&PAL.nl===1,symSvg(comboParts(k,lt,1),40),n)).join('')}</div>
-  <div class="palh">Trụ</div><div class="chips">${K.map(k=>chip('data-pk',k,PAL.k===k,symSvg(PBLK[k]?[[PBLK[k],0,0,0]]:[]),KIND[k].replace('Trụ treo cáp – TTC','Trụ treo cáp TTC').replace('Không trụ vật lý','Không trụ'))).join('')}</div>
-  <div class="palh">Đèn</div><div class="chips">${L.map(t=>chip('data-pl',t,PAL.lt===t,t==='NONE'?'<svg width="34" height="18" aria-hidden="true"></svg>':symSvg([[LBLK[t],0,0,0]]),LTN[t])).join('')}</div>
-  <div class="palh">Số bộ đèn trên trụ</div><div class="chips">${[1,2].map(n=>`<button type="button" class="chip sm ${PAL.nl===n?'on':''}" data-pn="${n}" aria-pressed="${PAL.nl===n}" ${['NONE','TT'].includes(PAL.lt)?'disabled':''}><span>${n} bộ</span></button>`).join('')}</div>
+ const PO=tool==='pole';
+ el.innerHTML=`<div class="palnote">Nhấn ký hiệu để vẽ · nhấn lại ký hiệu đang chọn hoặc Esc để thoát lệnh vẽ</div><div class="palh">Ghép sẵn theo khung chú thích</div><div class="chips">${QC.map(([k,lt,n])=>chip('data-pq',k+','+lt,PO&&PAL.k===k&&PAL.lt===lt&&PAL.nl===1,symSvg(comboParts(k,lt,1),40),n)).join('')}</div>
+  <div class="palh">Trụ</div><div class="chips">${K.map(k=>chip('data-pk',k,PO&&PAL.k===k,symSvg(PBLK[k]?[[PBLK[k],0,0,0]]:[]),KIND[k].replace('Trụ treo cáp – TTC','Trụ treo cáp TTC').replace('Không trụ vật lý','Không trụ'))).join('')}</div>
+  <div class="palh">Đèn</div><div class="chips">${L.map(t=>chip('data-pl',t,PO&&PAL.lt===t,t==='NONE'?'<svg width="34" height="18" aria-hidden="true"></svg>':symSvg([[LBLK[t],0,0,0]]),LTN[t])).join('')}</div>
+  <div class="palh">Số bộ đèn trên trụ</div><div class="chips">${[1,2].map(n=>`<button type="button" class="chip sm ${PO&&PAL.nl===n?'on':''}" data-pn="${n}" aria-pressed="${PO&&PAL.nl===n}" ${['NONE','TT'].includes(PAL.lt)?'disabled':''}><span>${n} bộ</span></button>`).join('')}</div>
   <div class="palprev"><div class="pv">${symSvg(comboParts(PAL.k,PAL.lt,PAL.lt==='TT'||PAL.lt==='NONE'?1:PAL.nl),90,26)}</div><b>${comboName(PAL.k,PAL.lt,PAL.lt==='TT'?1:PAL.nl)}</b></div>
   <div class="row"><button type="button" class="btn pri" id="palDraw">Vẽ trụ mới với ký hiệu này</button><button type="button" class="btn" id="palApply">Áp cho trụ đang chọn</button></div>
   <div class="palh">Tủ điều khiển</div><div class="chips">${[4,5].map(k=>chip('data-pc',k,tool==='cab'&&$('newCab').value==k,symSvg([[PBLK[k],0,0,0]]),KIND[k])).join('')}</div>
   <div class="palh">Cáp – chọn để vẽ</div><div class="chips"><button type="button" class="chip ${tool==='noi'?'on':''}" data-pt="noi"><span class="sw" style="border-color:var(--noi)"></span><span>Cáp nguồn nổi</span></button><button type="button" class="chip ${tool==='ngam'?'on':''}" data-pt="ngam"><span class="sw" style="border-color:var(--ngam);border-top-style:dashed"></span><span>Cáp nguồn ngầm</span></button></div>`;
- const go=()=>{syncNewOpt();renderPal();if(canWrite){if(tool!=='pole')setTool('pole');$('cmdP').textContent='Chạm vị trí đặt '+comboName(PAL.k,PAL.lt,PAL.nl)+' (Esc: kết thúc):'}};
- for(const b of el.querySelectorAll('[data-pq]'))b.onclick=()=>{const[k,lt]=b.dataset.pq.split(',');PAL.k=+k;PAL.lt=lt;PAL.nl=1;go()};
- for(const b of el.querySelectorAll('[data-pk]'))b.onclick=()=>{PAL.k=+b.dataset.pk;if(PAL.k===2&&PAL.lt==='LED')PAL.lt='TT';go()};
- for(const b of el.querySelectorAll('[data-pl]'))b.onclick=()=>{PAL.lt=b.dataset.pl;go()};
- for(const b of el.querySelectorAll('[data-pn]'))b.onclick=()=>{PAL.nl=+b.dataset.pn;go()};
- for(const b of el.querySelectorAll('[data-pc]'))b.onclick=()=>{$('newCab').value=b.dataset.pc;setTool('cab');renderPal()};
- for(const b of el.querySelectorAll('[data-pt]'))b.onclick=()=>{setTool(b.dataset.pt);renderPal()};
+ const go=()=>{syncNewOpt();if(canWrite){if(tool!=='pole')setTool('pole');$('cmdP').textContent='Chạm vị trí đặt '+comboName(PAL.k,PAL.lt,PAL.nl)+' (nhấn lại ký hiệu hoặc Esc: thoát):'}else cmdMsg('Bạn chỉ có quyền xem');renderPal()};
+ const off=b=>{if(!b.classList.contains('on'))return false;setTool('sel');renderPal();cmdMsg('Đã bỏ chọn ký hiệu – thoát lệnh vẽ');return true};
+ for(const b of el.querySelectorAll('[data-pq]'))b.onclick=()=>{if(off(b))return;const[k,lt]=b.dataset.pq.split(',');PAL.k=+k;PAL.lt=lt;PAL.nl=1;go()};
+ for(const b of el.querySelectorAll('[data-pk]'))b.onclick=()=>{if(off(b))return;PAL.k=+b.dataset.pk;if(PAL.k===2&&PAL.lt==='LED')PAL.lt='TT';go()};
+ for(const b of el.querySelectorAll('[data-pl]'))b.onclick=()=>{if(off(b))return;PAL.lt=b.dataset.pl;go()};
+ for(const b of el.querySelectorAll('[data-pn]'))b.onclick=()=>{if(off(b))return;PAL.nl=+b.dataset.pn;go()};
+ for(const b of el.querySelectorAll('[data-pc]'))b.onclick=()=>{if(off(b))return;$('newCab').value=b.dataset.pc;setTool('cab');renderPal()};
+ for(const b of el.querySelectorAll('[data-pt]'))b.onclick=()=>{if(off(b))return;setTool(b.dataset.pt);renderPal()};
  $('palDraw').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}go()};
  $('palApply').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}const i=selP;if(i<0||DEL[i]){cmdMsg('Chọn một trụ trên bản đồ trước, rồi bấm “Áp cho trụ đang chọn”');return}
   if(ISCAB(PK[i])){cmdMsg('Đối tượng đang chọn là tủ điều khiển, không áp ký hiệu trụ – đèn');return}
@@ -1198,6 +1201,7 @@ function renderPal(){const el=$('pal');if(!el)return;
 function syncNewOpt(){$('newKind').value=PAL.k;$('newLt').value=PAL.lt;$('newNl').value=PAL.nl}
 $('newKind').onchange=()=>{PAL.k=+$('newKind').value;renderPal()};$('newLt').onchange=()=>{PAL.lt=$('newLt').value;renderPal()};$('newNl').onchange=()=>{PAL.nl=+$('newNl').value;renderPal()};
 renderPal();syncNewOpt();
+{const _st=setTool;setTool=function(t){const r=_st.apply(this,arguments);if(typeof renderPal==='function')renderPal();return r}}
 // ---------- nhập loại đèn (LED / HPS / MH) theo từng trụ từ file thống kê (.xlsx / .csv)
 const unacc2=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[đĐ]/g,'d').toLowerCase().trim();
 function lampOf(s){const l=String(s??'').toLowerCase();if(!l.trim())return null;
