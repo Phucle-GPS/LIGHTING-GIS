@@ -1158,7 +1158,7 @@ function zip(name,str){const data=new TextEncoder().encode(str),nm=new TextEncod
    $('exNote').textContent=`Đã gộp ${r.n} bản vẽ của ${r.nt} tủ vào 1 file DXF – tỉ lệ 1/1000, mỗi tủ một hàng (gom 1 bản, tủ dài tách 2 bản trở lên).`;
    if(STANDALONE)saveSeq([{name:nm+'.dxf',data:r.dxf}]);else go(nm+'.zip',zipMany([{name:nm+'.dxf',data:r.dxf}]))},30)}})();
 // ---------- bảng ký hiệu: chọn ký hiệu trụ + đèn, ghép lại rồi vẽ thêm hoặc áp cho trụ đang chọn
-const PAL={k:1,lt:'LED',nl:1};
+const PAL={k:1,lt:'LED',nl:1};let PSEL=null;
 const KSH={0:'BT',1:'STK',2:'Trụ trang trí',3:'Không trụ',6:'TTC'};
 function comboName(k,lt,nl){const a=KIND[k],b=lt==='NONE'?'không đèn':LTN[lt]+(nl>1&&lt!=='TT'?' × '+nl:'');return a+' + '+b}
 function symSvg(parts,maxW=34,maxH=16){const prs=[];
@@ -1177,24 +1177,24 @@ function renderPal(){const el=$('pal');if(!el)return;
  const chip=(attr,v,on,svg,lab)=>`<button type="button" class="chip ${on?'on':''}" ${attr}="${v}" aria-pressed="${on}">${svg}<span>${lab}</span></button>`;
  const K=[1,0,6,2,3],L=['LED','HPS','MH','TT','NONE'];
  const QC=[[1,'LED','STK + LED'],[0,'HPS','BT + HPS'],[1,'HPS','STK + HPS'],[0,'LED','BT + LED']];
- const PO=tool==='pole';
- el.innerHTML=`<div class="palnote">Nhấn ký hiệu để vẽ · nhấn lại ký hiệu đang chọn hoặc Esc để thoát lệnh vẽ</div><div class="palh">Ghép sẵn theo khung chú thích</div><div class="chips">${QC.map(([k,lt,n])=>chip('data-pq',k+','+lt,PO&&PAL.k===k&&PAL.lt===lt&&PAL.nl===1,symSvg(comboParts(k,lt,1),40),n)).join('')}</div>
-  <div class="palh">Trụ</div><div class="chips">${K.map(k=>chip('data-pk',k,PO&&PAL.k===k,symSvg(PBLK[k]?[[PBLK[k],0,0,0]]:[]),KIND[k].replace('Trụ treo cáp – TTC','Trụ treo cáp TTC').replace('Không trụ vật lý','Không trụ'))).join('')}</div>
-  <div class="palh">Đèn</div><div class="chips">${L.map(t=>chip('data-pl',t,PO&&PAL.lt===t,t==='NONE'?'<svg width="34" height="18" aria-hidden="true"></svg>':symSvg([[LBLK[t],0,0,0]]),LTN[t])).join('')}</div>
-  <div class="palh">Số bộ đèn trên trụ</div><div class="chips">${[1,2].map(n=>`<button type="button" class="chip sm ${PO&&PAL.nl===n?'on':''}" data-pn="${n}" aria-pressed="${PO&&PAL.nl===n}" ${['NONE','TT'].includes(PAL.lt)?'disabled':''}><span>${n} bộ</span></button>`).join('')}</div>
+ const PO=tool==='pole',ON=(a,v)=>PO&&PSEL===a+':'+v;
+ el.innerHTML=`<div class="palnote">Nhấn ký hiệu để vẽ · nhấn lại ký hiệu đang chọn hoặc Esc để thoát lệnh vẽ</div><div class="palh">Ghép sẵn theo khung chú thích</div><div class="chips">${QC.map(([k,lt,n])=>chip('data-pq',k+','+lt,ON('pq',k+','+lt),symSvg(comboParts(k,lt,1),40),n)).join('')}</div>
+  <div class="palh">Trụ</div><div class="chips">${K.map(k=>chip('data-pk',k,ON('pk',k),symSvg(PBLK[k]?[[PBLK[k],0,0,0]]:[]),KIND[k].replace('Trụ treo cáp – TTC','Trụ treo cáp TTC').replace('Không trụ vật lý','Không trụ'))).join('')}</div>
+  <div class="palh">Đèn</div><div class="chips">${L.map(t=>chip('data-pl',t,ON('pl',t),t==='NONE'?'<svg width="34" height="18" aria-hidden="true"></svg>':symSvg([[LBLK[t],0,0,0]]),LTN[t])).join('')}</div>
+  <div class="palh">Số bộ đèn trên trụ</div><div class="chips">${[1,2].map(n=>`<button type="button" class="chip sm ${ON('pn',n)?'on':''}" data-pn="${n}" aria-pressed="${ON('pn',n)}" ${['NONE','TT'].includes(PAL.lt)?'disabled':''}><span>${n} bộ</span></button>`).join('')}</div>
   <div class="palprev"><div class="pv">${symSvg(comboParts(PAL.k,PAL.lt,PAL.lt==='TT'||PAL.lt==='NONE'?1:PAL.nl),90,26)}</div><b>${comboName(PAL.k,PAL.lt,PAL.lt==='TT'?1:PAL.nl)}</b></div>
   <div class="row"><button type="button" class="btn pri" id="palDraw">Vẽ trụ mới với ký hiệu này</button><button type="button" class="btn" id="palApply">Áp cho trụ đang chọn</button></div>
   <div class="palh">Tủ điều khiển</div><div class="chips">${[4,5].map(k=>chip('data-pc',k,tool==='cab'&&$('newCab').value==k,symSvg([[PBLK[k],0,0,0]]),KIND[k])).join('')}</div>
   <div class="palh">Cáp – chọn để vẽ</div><div class="chips"><button type="button" class="chip ${tool==='noi'?'on':''}" data-pt="noi"><span class="sw" style="border-color:var(--noi)"></span><span>Cáp nguồn nổi</span></button><button type="button" class="chip ${tool==='ngam'?'on':''}" data-pt="ngam"><span class="sw" style="border-color:var(--ngam);border-top-style:dashed"></span><span>Cáp nguồn ngầm</span></button></div>`;
  const go=()=>{syncNewOpt();if(canWrite){if(tool!=='pole')setTool('pole');$('cmdP').textContent='Chạm vị trí đặt '+comboName(PAL.k,PAL.lt,PAL.nl)+' (nhấn lại ký hiệu hoặc Esc: thoát):'}else cmdMsg('Bạn chỉ có quyền xem');renderPal()};
  const off=b=>{if(!b.classList.contains('on'))return false;setTool('sel');renderPal();cmdMsg('Đã bỏ chọn ký hiệu – thoát lệnh vẽ');return true};
- for(const b of el.querySelectorAll('[data-pq]'))b.onclick=()=>{if(off(b))return;const[k,lt]=b.dataset.pq.split(',');PAL.k=+k;PAL.lt=lt;PAL.nl=1;go()};
- for(const b of el.querySelectorAll('[data-pk]'))b.onclick=()=>{if(off(b))return;PAL.k=+b.dataset.pk;if(PAL.k===2&&PAL.lt==='LED')PAL.lt='TT';go()};
- for(const b of el.querySelectorAll('[data-pl]'))b.onclick=()=>{if(off(b))return;PAL.lt=b.dataset.pl;go()};
- for(const b of el.querySelectorAll('[data-pn]'))b.onclick=()=>{if(off(b))return;PAL.nl=+b.dataset.pn;go()};
+ for(const b of el.querySelectorAll('[data-pq]'))b.onclick=()=>{if(off(b))return;PSEL='pq:'+b.dataset.pq;const[k,lt]=b.dataset.pq.split(',');PAL.k=+k;PAL.lt=lt;PAL.nl=1;go()};
+ for(const b of el.querySelectorAll('[data-pk]'))b.onclick=()=>{if(off(b))return;PSEL='pk:'+b.dataset.pk;PAL.k=+b.dataset.pk;if(PAL.k===2&&PAL.lt==='LED')PAL.lt='TT';go()};
+ for(const b of el.querySelectorAll('[data-pl]'))b.onclick=()=>{if(off(b))return;PSEL='pl:'+b.dataset.pl;PAL.lt=b.dataset.pl;go()};
+ for(const b of el.querySelectorAll('[data-pn]'))b.onclick=()=>{if(off(b))return;PSEL='pn:'+b.dataset.pn;PAL.nl=+b.dataset.pn;go()};
  for(const b of el.querySelectorAll('[data-pc]'))b.onclick=()=>{if(off(b))return;$('newCab').value=b.dataset.pc;setTool('cab');renderPal()};
  for(const b of el.querySelectorAll('[data-pt]'))b.onclick=()=>{if(off(b))return;setTool(b.dataset.pt);renderPal()};
- $('palDraw').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}go()};
+ $('palDraw').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}PSEL=null;go()};
  $('palApply').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}const i=selP;if(i<0||DEL[i]){cmdMsg('Chọn một trụ trên bản đồ trước, rồi bấm “Áp cho trụ đang chọn”');return}
   if(ISCAB(PK[i])){cmdMsg('Đối tượng đang chọn là tủ điều khiển, không áp ký hiệu trụ – đèn');return}
   const nl=['NONE','TT'].includes(PAL.lt)?1:PAL.nl;setPole(i,{k:NEW[i]||PAL.k!==kind0(P[i])?PAL.k:null,lt:PAL.lt,lts:null,nl:nl===nLamp0(i)?null:nl});selectPole(i);cmdMsg(`Đã đổi "${P[i][0]}" thành ${comboName(PAL.k,PAL.lt,nl)} – nhớ bấm Cập nhật`)}}
