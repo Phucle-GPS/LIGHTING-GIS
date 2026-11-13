@@ -2309,6 +2309,59 @@ window.__lp={lc:(i,ix)=>{const c=lampCenter(i,ix);return c?[sx(c[0]),sy(c[1])]:n
 
 {const _xp=xPrint;xPrint=function(){let ts=null;if(SEL.size)ts=[...new Set([...SEL].map(i=>PT[i]))].filter(t=>cntOf(t));else if(!(selT>=0||selP>=0||selS>=0))ts=[...Array(nT).keys()].filter(t=>vis[t]&&cntOf(t));if(ts&&ts.length>1&&!SEL.size){batchShow();return}return _xp.apply(this,arguments)}}
 window.__bx=(ts,fm)=>batchRun(ts,fm||'tu',true);
+// ===== GRIP kiểu AutoCAD: chọn đối tượng vẽ → hiện ô vuông xanh; kéo ô (hoặc bấm ô rồi bấm điểm mới) để kéo dãn / dời / đổi bán kính
+function gripsOf(e){const g=[];switch(e.ty){
+ case'L':g.push([e.p[0],e.p[1],'v0'],[e.p[2],e.p[3],'v1'],[(e.p[0]+e.p[2])/2,(e.p[1]+e.p[3])/2,'mv']);break;
+ case'PL':case'H':for(let i=0;i<e.p.length;i+=2)g.push([e.p[i],e.p[i+1],'v'+(i/2)]);if(e.ty==='PL'){const n=e.p.length/2;for(let i=0;i<n-(e.cl?0:1);i++){const j=(i+1)%n;g.push([(e.p[2*i]+e.p[2*j])/2,(e.p[2*i+1]+e.p[2*j+1])/2,'m'+i])}}break;
+ case'C':g.push([e.x,e.y,'mv']);for(const a of[0,90,180,270])g.push([e.x+e.r*cosd(a),e.y+e.r*sind(a),'r']);break;
+ case'A':{const am=e.a0+arcSweep(e.a0,e.a1)/2;g.push([e.x,e.y,'mv'],[e.x+e.r*cosd(e.a0),e.y+e.r*sind(e.a0),'a0'],[e.x+e.r*cosd(e.a1),e.y+e.r*sind(e.a1),'a1'],[e.x+e.r*cosd(am),e.y+e.r*sind(am),'r']);break}
+ case'EL':{const r=e.rot||0;g.push([e.x,e.y,'mv'],[e.x+e.rx*cosd(r),e.y+e.rx*sind(r),'rx'],[e.x-e.rx*cosd(r),e.y-e.rx*sind(r),'rx'],[e.x-e.ry*sind(r),e.y+e.ry*cosd(r),'ry'],[e.x+e.ry*sind(r),e.y-e.ry*cosd(r),'ry']);break}
+ case'T':g.push([e.x,e.y,'mv']);break;
+ case'D':g.push([e.p[0],e.p[1],'d0'],[e.p[2],e.p[3],'d1'],[e.q[0],e.q[1],'dq']);break}return g}
+function gripApply(e,kind,P,B){const dx=P[0]-B[0],dy=P[1]-B[1];
+ if(kind==='mv')return xfE(e,mT(dx,dy));
+ if(/^v\d+$/.test(kind)){const i=+kind.slice(1);e.p[2*i]=P[0];e.p[2*i+1]=P[1];return e}
+ if(/^m\d+$/.test(kind)){const i=+kind.slice(1),n=e.p.length/2,j=(i+1)%n;for(const q of[i,j]){e.p[2*q]+=dx;e.p[2*q+1]+=dy}return e}
+ if(kind==='r'){e.r=Math.max(0.01,Math.hypot(P[0]-e.x,P[1]-e.y));return e}
+ if(kind==='a0'){e.a0=angOfV(P[0]-e.x,P[1]-e.y);return e}if(kind==='a1'){e.a1=angOfV(P[0]-e.x,P[1]-e.y);return e}
+ if(kind==='rx'){e.rx=Math.max(0.01,Math.hypot(P[0]-e.x,P[1]-e.y));e.rot=angOfV(P[0]-e.x,P[1]-e.y);return e}
+ if(kind==='ry'){e.ry=Math.max(0.01,Math.abs((P[0]-e.x)*-sind(e.rot||0)+(P[1]-e.y)*cosd(e.rot||0)));return e}
+ if(kind==='d0'){e.p[0]=P[0];e.p[1]=P[1];return e}if(kind==='d1'){e.p[2]=P[0];e.p[3]=P[1];return e}if(kind==='dq'){e.q=[P[0],P[1]];return e}return e}
+let GRIP=null;
+function gripHit(X,Y){if(!DSEL.size||tool!=='sel'||!canWrite)return null;const R=PTT!=='mouse'?13:8;let best=null,bd=R;
+ for(const key of DSEL){const e=dGet(key);if(!e)continue;for(const[x,y,kind]of gripsOf(e)){const d=Math.max(Math.abs(sx(x)-X),Math.abs(sy(y)-Y));if(d<bd){bd=d;best={key,kind,b:[x,y]}}}}
+ if(!best)return null;
+ // các ô trùng điểm của đối tượng khác cũng đi theo (như AutoCAD kéo đầu chung của nhiều đường)
+ const tg=[];for(const key of DSEL){const e=dGet(key);if(!e)continue;for(const[x,y,kind]of gripsOf(e))if(Math.hypot(x-best.b[0],y-best.b[1])<1e-6&&!tg.some(t=>t.key===key&&t.kind===kind))tg.push({key,kind})}
+ return{...best,tg}}
+function gripPt(X,Y){const p=getPt(X,Y,GRIP?GRIP.b:null);return[p.x,p.y]}
+function gripDone(P){const G=GRIP;GRIP=null;$('cmdP').textContent=PROMPT.sel;if(!G||!P)return draw();
+ const by={};for(const t of G.tg)(by[t.key]=by[t.key]||[]).push(t.kind);
+ dwMod(Object.keys(by),(e,t,id)=>{const ks=by[dKey(t,id)]||[];for(const kd of ks)e=gripApply(e,kd,P,G.b);return e});
+ cmdMsg(`Đã sửa ${Object.keys(by).length} đối tượng bằng grip (${G.kind==='mv'?'dời':G.kind==='r'?'bán kính':'kéo dãn'}) – Ctrl+Z để hoàn tác`);draw()}
+cv.addEventListener('pointerdown',e=>{if(e.button!==0)return;const X=e.offsetX,Y=e.offsetY;
+ if(GRIP&&GRIP.wait){e.stopImmediatePropagation();e.preventDefault();gripDone(gripPt(X,Y));return}
+ const h=gripHit(X,Y);if(!h)return;e.stopImmediatePropagation();e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(_){}
+ GRIP={...h,down:[X,Y],moved:false,wait:false};$('cmdP').textContent='** KÉO DÃN ** – kéo/bấm điểm mới (bắt điểm OSNAP, gõ không cần) · Esc: hủy';draw()},true);
+cv.addEventListener('pointermove',e=>{if(!GRIP)return;mouse=[e.offsetX,e.offsetY];if(!GRIP.wait&&Math.abs(e.offsetX-GRIP.down[0])+Math.abs(e.offsetY-GRIP.down[1])>3)GRIP.moved=true;e.stopImmediatePropagation();draw()},true);
+cv.addEventListener('pointerup',e=>{if(!GRIP||GRIP.wait)return;e.stopImmediatePropagation();if(GRIP.moved)gripDone(gripPt(e.offsetX,e.offsetY));else{GRIP.wait=true;cmdMsg('Grip nóng (đỏ): bấm điểm mới để kéo đến – Esc để hủy');draw()}},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&GRIP){GRIP=null;$('cmdP').textContent=PROMPT.sel;e.stopImmediatePropagation();draw()}},true);
+{const _dr=dwRender;dwRender=function(g){_dr(g);if(!DSEL.size||tool!=='sel')return;g.save();let n=0;
+ if(GRIP&&mouse){const P=gripPt(mouse[0],mouse[1]);g.globalAlpha=.75;g.setLineDash([5,3]);const by={};for(const t of GRIP.tg)(by[t.key]=by[t.key]||[]).push(t.kind);
+  for(const key in by){let e=JSON.parse(JSON.stringify(dGet(key)||null));if(!e)continue;for(const kd of by[key])e=gripApply(e,kd,P,GRIP.b);dwDrawE(g,e,C.sel,1.6)}
+  g.setLineDash([]);g.globalAlpha=1;rub(g,GRIP.b,{x:P[0],y:P[1]})}
+ for(const key of DSEL){const e=dGet(key);if(!e)continue;for(const[x,y,kind]of gripsOf(e)){if(++n>600)break;const X=sx(x),Y=sy(y),hot=GRIP&&GRIP.tg.some(t=>t.key===key&&t.kind===kind)&&Math.hypot(x-GRIP.b[0],y-GRIP.b[1])<1e-6;
+  g.fillStyle=hot?'#e5484d':(kind[0]==='m'&&kind!=='mv'?'#7fb2ff':'#2f7cf6');g.strokeStyle='#fff';g.lineWidth=1;g.fillRect(X-4,Y-4,8,8);g.strokeRect(X-4,Y-4,8,8)}}
+ g.restore()}}
+// nhấp đúp đối tượng vẽ bất kỳ → bảng thuộc tính
+cv.addEventListener('dblclick',e=>{if(tool!=='sel')return;const k_=dwHit(e.offsetX,e.offsetY);if(!k_)return;const en=dGet(k_);if(!en||en.ty==='T')return;DSEL.clear();DSEL.add(k_);propShow()});
+// Space / Enter trên bản đồ như AutoCAD: đang có lệnh → kết thúc; không có lệnh → lặp lại lệnh vừa dùng
+document.addEventListener('keydown',e=>{const tg=e.target,emptyCmd=tg&&tg.id==='cmdIn'&&!tg.value.trim(),typing=!emptyCmd&&tg&&(tg.tagName==='INPUT'||tg.tagName==='TEXTAREA'||tg.tagName==='SELECT'||tg.isContentEditable);
+ if(typing||e.ctrlKey||e.metaKey||e.altKey)return;if(tg&&tg.tagName==='BUTTON'&&e.key===' ')return;const m=$('xm');if(m&&!m.hidden)return;
+ if(e.key!==' '&&e.key!=='Enter')return;e.preventDefault();e.stopImmediatePropagation();
+ if(GRIP&&GRIP.wait&&mouse){gripDone(gripPt(mouse[0],mouse[1]));return}
+ if(tool!=='sel'){runCmd('');return}
+ if(LASTCMD){cmdMsg('Lặp lại lệnh: '+LASTCMD);xCmd(LASTCMD)}},true);
 
 // ---------- init
 colors();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{colors();draw()});
@@ -2318,7 +2371,7 @@ window.__T={setTool,toolClick,sx,sy,get N(){return N},P:()=>P,PX:()=>PX,PY:()=>P
 })();
 </script>
 <script>
-(function(){const V='1794565901';
+(function(){const V='1794568436';
  async function raw(n){let r=null;try{r=await fetch(n+'.gz?v='+V)}catch(e){}
   if(r&&r.ok){const u=new Uint8Array(await r.arrayBuffer());if(u[0]===0x1f&&u[1]===0x8b){if(!('DecompressionStream' in window))throw new Error('nogz');return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}return new TextDecoder().decode(u)}
   throw new Error('miss '+n)}
