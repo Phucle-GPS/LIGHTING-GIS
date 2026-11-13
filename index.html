@@ -296,9 +296,9 @@ details.fold[open]>summary{border-bottom:1px solid var(--line);border-radius:12p
    <div id="ltImpOut" class="ltimp" hidden></div></div></details>
   <details class="sec fold" data-k="taikhoan" id="accSec" hidden><summary><h2>Quản lý tài khoản</h2><span class="fhint">Chỉ chủ app</span></summary><div class="foldin" id="accAdmin"></div></details>
   <div class="sec"><h2>Xuất dữ liệu</h2>
-   <div class="row"><button class="btn pri" id="exSheet" disabled>Bản vẽ khung – tủ đang chọn</button><button class="btn" id="exSheets" disabled>Bản vẽ khung – các tủ đang bật</button><button class="btn" id="exDxf" disabled>DXF tổng (.zip)</button><button class="btn" id="exCsv" disabled>Bảng cáp (.csv)</button><button class="btn" id="exPole" disabled>Bảng tọa độ trụ (.csv)</button></div>
+   <div class="row"><button class="btn pri" id="exSheet" disabled>Bản vẽ khung – tủ đang chọn</button><button class="btn" id="exSheets" disabled>Xuất hàng loạt – tách từng tủ (.zip)</button><button class="btn" id="exDxf" disabled>DXF tổng (.zip)</button><button class="btn" id="exCsv" disabled>Bảng cáp (.csv)</button><button class="btn" id="exPole" disabled>Bảng tọa độ trụ (.csv)</button></div>
    <div class="row" id="exIO" hidden style="margin-top:6px"><button class="btn" id="exEd">Xuất chỉnh sửa (.json)</button><label class="btn" style="display:inline-flex;align-items:center">Nhập chỉnh sửa<input type="file" id="imEd" accept=".json" hidden></label></div>
-   <p class="note" id="exNote">Bản vẽ khung tỉ lệ 1/1000 theo khung mẫu, gộp tất cả các bản vào 1 file DXF.</p></div>
+   <p class="note" id="exNote">Bản vẽ khung tỉ lệ 1/1000 theo khung mẫu. Xuất hàng loạt: tự tách mỗi tủ 1 file DXF, nén chung 1 file .zip (chọn tủ đang bật, cả quận hoặc tất cả).</p></div>
  </div>
 </aside>
 <main>
@@ -654,7 +654,7 @@ function render(){raf=0;const g=g0;g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=C
  if(ME){const X=sx(ME.x),Y=sy(ME.y);if(ME.acc){g.fillStyle=C.me;g.globalAlpha=.13;g.beginPath();g.arc(X,Y,Math.max(8,ME.acc*k),0,6.2832);g.fill();g.globalAlpha=1}
   g.fillStyle='#fff';g.beginPath();g.arc(X,Y,9,0,6.2832);g.fill();g.fillStyle=C.me;g.beginPath();g.arc(X,Y,6,0,6.2832);g.fill();label(g,'Bạn đang ở đây',X+12,Y-12)}
  const sm=niceStep(100/k);$('scale').innerHTML=`<span style="display:inline-block;width:${sm*k}px;border-bottom:2px solid currentColor;margin-right:6px"></span>${sm>=1000?sm/1000+' km':sm+' m'}`;}
-function handle(i){const a=angOf(i),d=5.75*lastS;return[sx(PX[i])+Math.cos(a)*d,sy(PY[i])-Math.sin(a)*d]}
+function handle(i){const a=angOf(i)+(lampDraw(i).length>1?Math.PI/2:0),d=(lampDraw(i).length>1?4.2:5.75)*lastS;return[sx(PX[i])+Math.cos(a)*d,sy(PY[i])-Math.sin(a)*d]}
 // ---------- CAD tools
 // tool: sel | move | rot | pole | cab | noi | ngam | erase | dist
 let tool='sel',T={},mouse=[0,0],snapI=-1;
@@ -728,7 +728,9 @@ cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set
  if(e.button===0&&canWrite&&(tool==='noi'||tool==='ngam')){const hp=hitPole(e.offsetX,e.offsetY,14);if(hp>=0){drag={type:'cable',a:hp,ty:tool==='noi'?1:0};return}}
  if(e.button!==0||tool!=='sel'||!canWrite||k<0.9)return;
  if(selS>=0&&S[selS]&&!sdel(S[selS])){const sg=S[selS];for(const[end,i]of[['a',sg.a],['b',sg.b]])if(Math.hypot(sx(PX[i])-e.offsetX,sy(PY[i])-e.offsetY)<12){drag={type:'grip',j:selS,end,fix:end==='a'?sg.b:sg.a};return}}
+ if(selP>=0&&typeof lampGrab==='function'){const g_=lampGrab(selP,e.offsetX,e.offsetY);if(g_!=null){selL=[selP,g_];drag={type:'lrot',i:selP,ix:g_};return}}
  if(selL&&selL[0]===selP){const c=lampCenter(selL[0],selL[1]);if(c&&Math.hypot(sx(c[0])-e.offsetX,sy(c[1])-e.offsetY)<Math.max(14,2.4*lastS)){drag={type:'lrot',i:selL[0],ix:selL[1]};return}}
+ {const hl=opt.lamp&&k>=0.9?hitLamp(e.offsetX,e.offsetY):null;if(hl&&lampList(hl[0])[hl[1]]!=='TT'){drag={type:'lrot',i:hl[0],ix:hl[1]};return}}
  if(selP>=0){const h=handle(selP);if(Math.hypot(h[0]-e.offsetX,h[1]-e.offsetY)<16){drag={type:'rot',i:selP};return}
   if(Math.hypot(sx(PX[selP])-e.offsetX,sy(PY[selP])-e.offsetY)<Math.max(14,1.3*lastS)){drag={type:'move',i:selP,dx:sx(PX[selP])-e.offsetX,dy:sy(PY[selP])-e.offsetY};return}}});
 cv.addEventListener('pointermove',e=>{mouse=[e.offsetX,e.offsetY];$('coord').textContent=`X ${(wx(e.offsetX)+D.X0).toFixed(2)}  Y ${(wy(e.offsetY)+D.Y0).toFixed(2)}`;
@@ -1215,7 +1217,7 @@ function zip(name,str){const data=new TextEncoder().encode(str),nm=new TextEncod
    setStatus(`Đã nhập chỉnh sửa của ${n} tủ – bấm Cập nhật để lưu`)}catch(err){setStatus('File chỉnh sửa không hợp lệ')}e.target.value=''}}
  if(!dl){$('exNote').textContent+=' (Tải file không khả dụng ở chế độ xem này.)';return}
  for(const b of['exDxf','exCsv','exPole'])$(b).disabled=false;
- const go=async(fn,data)=>{try{return await dl.save({filename:fn,data})}catch(e){if(e&&e.code!=='declined')$('exNote').textContent='Không tải được file: '+(e.message||e.code)}};
+ const go=async(fn,data)=>{try{return await dl.save({filename:fn,data})}catch(e){if(e&&e.code!=='declined')$('exNote').textContent='Không tải được file: '+(e.message||e.code)}};window.__dlGo=go;
  $('exDxf').onclick=()=>go('LightingGIS_BinhThanh.zip',zip('LightingGIS_BinhThanh.dxf',buildDxf()));
  $('exCsv').onclick=()=>go('Bang_cap_LightingGIS.csv',buildCsv());
  $('exPole').onclick=()=>go('Bang_toa_do_tru_LightingGIS.csv',buildPoles());
@@ -2245,6 +2247,69 @@ let hovRaf=0;cv.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'||e
   if(HOV.n>1&&mouse){g.setLineDash([]);g.globalAlpha=1;label(g,HOV.n+' đối tượng chồng nhau – bấm lại để đổi',mouse[0]+14,mouse[1]+18)}g.restore()}}}
 window.__sel={c:(X,Y)=>selCands(X,Y).map(cKey),st:()=>({SWIN:!!SWIN,LASTC,tool,selP,SEL:SEL.size,DSEL:DSEL.size})};
 
+// ===== XOAY TỪNG BỘ ĐÈN trên trụ nhiều đèn: mỗi bộ có tay xoay riêng, xoay bộ này không kéo theo bộ kia
+function lampHandleW(i,ix){const d=lampDraw(i).find(x=>x[2]===ix);if(!d)return null;const a=angOf(i)+d[1],r=(d[0]==='TT'?2.75:4.75)+(d[0]==='TT'?1.6:2.6)+1.4;return[PX[i]+Math.cos(a)*r,PY[i]+Math.sin(a)*r]}
+function lampGrab(i,X,Y){const L=lampDraw(i);if(L.length<2||!canWrite||k<0.9)return null;let best=null,bd=1e9;
+ for(const d of L){const h=lampHandleW(i,d[2]);if(h){const dd=Math.hypot(sx(h[0])-X,sy(h[1])-Y);if(dd<Math.max(13,0.9*lastS)&&dd<bd){bd=dd;best=d[2]}}
+  const c=lampCenter(i,d[2]);if(c){const dd=Math.hypot(sx(c[0])-X,sy(c[1])-Y);if(dd<Math.max(10,c[2]*lastS)&&dd+2<bd){bd=dd+2;best=d[2]}}}return best}
+{const _dr=dwRender;dwRender=function(g){_dr(g);if(selP<0||DEL[selP]||!canWrite||k<0.9)return;const L=lampDraw(selP);if(L.length<2)return;
+ g.save();for(const d of L){const h=lampHandleW(selP,d[2]),c=lampCenter(selP,d[2]);if(!h||!c)continue;const X=sx(h[0]),Y=sy(h[1]),on=selL&&selL[0]===selP&&selL[1]===d[2];
+  g.strokeStyle=on?C.sel:'#e2632f';g.lineWidth=1.2;g.setLineDash([3,2]);g.beginPath();g.moveTo(sx(c[0]),sy(c[1]));g.lineTo(X,Y);g.stroke();g.setLineDash([]);
+  g.fillStyle=on?C.sel:'#e2632f';g.beginPath();g.arc(X,Y,8,0,6.2832);g.fill();g.strokeStyle='#fff';g.lineWidth=1.6;g.beginPath();g.arc(X,Y,4,-2.4,1.9);g.stroke();
+  g.fillStyle='#fff';g.font='700 9px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(String(d[2]+1),X,Y+0.5)}g.restore()}}
+{const _sp=selectPole;selectPole=function(i,zoom){const r=_sp.apply(this,arguments);try{lampAngPanel(i)}catch(e){}return r}}
+function lampAngPanel(i){if(i<0||!canWrite)return;const L=lampDraw(i);if(L.length<2)return;const box=document.createElement('div');box.className='lrot lrlist';
+ box.innerHTML=`<h4 style="margin:6px 0 4px">Xoay từng bộ đèn (${L.length} bộ)</h4><p class="note" style="margin:0 0 6px">Kéo nút tròn cam đánh số trên bản đồ, hoặc chỉnh số độ dưới đây – mỗi bộ xoay riêng, bộ kia đứng yên.</p>`+
+  L.map(d=>`<div class="row" data-lx="${d[2]}" style="gap:6px;align-items:center;margin:3px 0"><b style="min-width:44px">Bộ ${d[2]+1}</b><button class="btn sm" data-a="-15" title="Xoay trái 15°">⟲ 15°</button><input type="text" inputmode="decimal" value="${lampAbs(i,d[2])}" style="width:60px"><span>°</span><button class="btn sm" data-a="15" title="Xoay phải 15°">⟳ 15°</button><button class="btn sm" data-a="ok">Áp dụng</button></div>`).join('');
+ $('info').appendChild(box);
+ for(const row of box.querySelectorAll('[data-lx]')){const ix=+row.dataset.lx,inp=row.querySelector('input');
+  const go=a=>{if(!isFinite(a))return;setLampAng(i,ix,((a-angDeg(i))%360+360)%360);const keep=selL&&selL[0]===i?selL[1]:null;keep!=null?selectLamp(i,keep):selectPole(i);cmdMsg(`Đã xoay riêng bộ đèn ${ix+1} của ${P[i][0]} về ${fmt(((a%360)+360)%360,0)}° – nhớ bấm Cập nhật`)};
+  for(const b of row.querySelectorAll('[data-a]'))b.onclick=()=>{const v=b.dataset.a;go(v==='ok'?parseFloat(inp.value.replace(',','.')):lampAbs(i,ix)+(+v===15?-15:15))};
+  inp.onkeydown=ev=>{if(ev.key==='Enter')go(parseFloat(inp.value.replace(',','.')))}}}
+
+// ===== XUẤT BẢN VẼ HÀNG LOẠT: tự tách từng tủ (mỗi tủ 1 file DXF), nén chung 1 file .zip
+async function zipDeflate(files,onp){const enc=new TextEncoder(),parts=[],cd=[];let off=0,n=0;const can=typeof CompressionStream!=='undefined';
+ for(const fl of files){const raw=typeof fl.data==='string'?enc.encode(fl.data):fl.data,nm=enc.encode(fl.name),crc=CRC(raw);let data=raw,meth=0;
+  if(can){try{const c=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());if(c.length<raw.length){data=c;meth=8}}catch(e){}}
+  const lh=new DataView(new ArrayBuffer(30));lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(8,meth,true);lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,raw.length,true);lh.setUint16(26,nm.length,true);
+  const ch=new DataView(new ArrayBuffer(46));ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(10,meth,true);ch.setUint32(16,crc,true);ch.setUint32(20,data.length,true);ch.setUint32(24,raw.length,true);ch.setUint16(28,nm.length,true);ch.setUint32(42,off,true);
+  parts.push(lh,nm,data);cd.push(ch,nm);off+=30+nm.length+data.length;fl.data=null;if(onp)onp(++n)}
+ const cdl=cd.reduce((s_,x)=>s_+(x.byteLength??x.length),0);const ed=new DataView(new ArrayBuffer(22));ed.setUint32(0,0x06054b50,true);ed.setUint16(8,files.length,true);ed.setUint16(10,files.length,true);ed.setUint32(12,cdl,true);ed.setUint32(16,off,true);
+ return new Blob([...parts,...cd,ed],{type:'application/zip'})}
+const fnSafe=s_=>unacc(String(s_)).replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim();
+let BXJ=null;
+function batchShow(){if(!BASE){$('exNote').textContent='Chờ bản đồ nền tải xong rồi xuất lại.';return}
+ const all=[...Array(nT).keys()].filter(t=>tuAllowed(t)&&cntOf(t)),on=all.filter(t=>vis[t]),q=curQ>=0?all.filter(t=>tuQ(t)===curQ):[];
+ const opt_=(v,l,n,ck)=>`<label class="fl" style="flex-direction:row;gap:8px;align-items:center;margin:4px 0"><input type="radio" name="bxS" value="${v}" ${ck?'checked':''} ${n?'':'disabled'}>${l} <b>(${n} tủ)</b></label>`;
+ xModal('Xuất bản vẽ hàng loạt',`<p class="note">Tự tách từng tủ: mỗi tủ 1 file DXF (các bản của tủ xếp cạnh nhau, tỉ lệ 1/1000, có đường nối A–A khi tủ dài), tất cả nén chung 1 file .zip.</p>
+  <div><b>Phạm vi</b>${opt_('on','Các tủ đang bật trên bản đồ',on.length,on.length>0)}${curQ>=0?opt_('q','Tất cả tủ của '+DIST.full[curQ],q.length,!on.length):''}${opt_('all','Tất cả tủ có dữ liệu (được phép xem)',all.length,!on.length&&curQ<0)}</div>
+  <div style="margin-top:8px"><b>Cách tách file</b>
+   <label class="fl" style="flex-direction:row;gap:8px;align-items:center;margin:4px 0"><input type="radio" name="bxF" value="tu" checked>Mỗi tủ 1 file DXF</label>
+   <label class="fl" style="flex-direction:row;gap:8px;align-items:center;margin:4px 0"><input type="radio" name="bxF" value="ban">Mỗi bản vẽ 1 file DXF (tủ dài có nhiều file)</label>
+   <label class="fl" style="flex-direction:row;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" id="bxQ" checked>Xếp vào thư mục theo quận</label></div>
+  <p class="note">Xuất nhiều tủ cần vài phút; app vẫn dùng được trong lúc chờ, có nút Dừng.</p>`,
+ [['Xuất',()=>{const sc=(document.querySelector('[name=bxS]:checked')||{}).value,fm=(document.querySelector('[name=bxF]:checked')||{}).value||'tu',fq=$('bxQ').checked;const ts=sc==='on'?on:sc==='q'?q:all;if(!ts.length)return true;batchRun(ts,fm,fq);return true}]])}
+async function batchRun(ts,fm,fq){if(BXJ){cmdMsg('Đang xuất – chờ xong hoặc bấm Dừng');return}BXJ={stop:false};const files=[],errs=[];let nb=0,ntu=0;const el=$('exNote');
+ const show=m=>{el.innerHTML=esc(m)+' <button class="btn sm" id="bxStop">Dừng</button>';const b=$('bxStop');if(b)b.onclick=()=>{BXJ.stop=true}};
+ const t0=Date.now();
+ for(let k_=0;k_<ts.length;k_++){if(BXJ.stop)break;const t=ts[k_];show(`Đang tạo bản vẽ ${k_+1}/${ts.length}: ${D.tu[t]}…`);await new Promise(r=>setTimeout(r,0));
+  try{const dir=fq?fnSafe(DIST.full[tuQ(t)]||'Khac')+'/':'',nm=fnSafe(D.tu[t]);
+   if(fm==='tu'){const r=oneDxf([t]);if(r){files.push({name:dir+nm+(r.n>1?` (${r.n} ban)`:'')+'.dxf',data:r.dxf});nb+=r.n;ntu++}}
+   else{const cs=sheetCenters(t);if(cs.length)ntu++;cs.forEach((c,j)=>{const r=sheetDxf(t,j+1,cs.length,c);if(r){files.push({name:dir+(cs.length>1?nm+'/':'')+fileTu(t,j+1,cs.length),data:r.dxf});nb++}})}}catch(e){errs.push(D.tu[t])}}
+ const stopped=BXJ.stop;if(!files.length){el.textContent=stopped?'Đã dừng – chưa có file nào.':'Không có tủ nào xuất được bản vẽ.';BXJ=null;return}
+ files.push({name:'DANH_SACH_BAN_VE.csv',data:'﻿STT,Tep\r\n'+files.map((f,i)=>`${i+1},"${f.name}"`).join('\r\n')});
+ show(`Đang nén ${files.length} file…`);const blob=await zipDeflate(files,n=>{if(n%20===0)show(`Đang nén ${n}/${files.length} file…`)});
+ const nmz=`BanVe_TL1000_${ts.length===1?fnSafe(D.tu[ts[0]]):ts.length+'_tu'}_${new Date().toISOString().slice(0,10)}.zip`;
+ el.textContent=`${stopped?'Đã dừng giữa chừng – ':''}Đã xuất ${nb} bản vẽ của ${ntu} tủ vào ${nmz} (${(blob.size/1048576).toFixed(1)} MB, ${Math.round((Date.now()-t0)/1000)} giây)${errs.length?' · lỗi: '+errs.slice(0,5).join(', '):''}.`;
+ BXJ=null;if(window.__dlGo)await window.__dlGo(nmz,blob)}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#exSheets');if(!b)return;e.stopPropagation();e.preventDefault();batchShow()},true);
+
+window.__lr={ang:i=>lampDraw(i).map(d=>lampAbs(i,d[2])),h:(i,ix)=>{const h=lampHandleW(i,ix);return[sx(h[0]),sy(h[1])]},p:i=>[sx(PX[i]),sy(PY[i])]};
+window.__lp={lc:(i,ix)=>{const c=lampCenter(i,ix);return c?[sx(c[0]),sy(c[1])]:null},pc:i=>[sx(PX[i]),sy(PY[i])],ld:i=>lampDraw(i).map(d=>[d[2],Math.round(d[1]*180/Math.PI)]),zoom:(i,kk)=>{k=kk;cx=PX[i];cy=PY[i];draw()},selL:()=>selL,selP:()=>selP};
+
+{const _xp=xPrint;xPrint=function(){let ts=null;if(SEL.size)ts=[...new Set([...SEL].map(i=>PT[i]))].filter(t=>cntOf(t));else if(!(selT>=0||selP>=0||selS>=0))ts=[...Array(nT).keys()].filter(t=>vis[t]&&cntOf(t));if(ts&&ts.length>1&&!SEL.size){batchShow();return}return _xp.apply(this,arguments)}}
+window.__bx=(ts,fm)=>batchRun(ts,fm||'tu',true);
+
 // ---------- init
 colors();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{colors();draw()});
 new MutationObserver(()=>{colors();draw()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
@@ -2253,7 +2318,7 @@ window.__T={setTool,toolClick,sx,sy,get N(){return N},P:()=>P,PX:()=>PX,PY:()=>P
 })();
 </script>
 <script>
-(function(){const V='1794560675';
+(function(){const V='1794565901';
  async function raw(n){let r=null;try{r=await fetch(n+'.gz?v='+V)}catch(e){}
   if(r&&r.ok){const u=new Uint8Array(await r.arrayBuffer());if(u[0]===0x1f&&u[1]===0x8b){if(!('DecompressionStream' in window))throw new Error('nogz');return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}return new TextDecoder().decode(u)}
   throw new Error('miss '+n)}
