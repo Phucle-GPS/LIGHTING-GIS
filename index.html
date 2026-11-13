@@ -716,7 +716,7 @@ function setSeg(s,patch){if(s.nw){op([s.tu],()=>{Object.assign(ED[s.tu].ns[s.key
 function toolClick(X,Y){const wxv=wx(X),wyv=wy(Y);const hp=opt.osnap?hitPole(X,Y,14):-1;
  if(XT[tool])return XT[tool](X,Y,wxv,wyv,hp);
  switch(tool){
- case'pole':case'cab':{const kd=tool==='cab'?$('newCab').value:$('newKind').value;const i=addPole(wxv,wyv,kd);selectPole(i);break}
+ case'pole':case'cab':{if(tool==='pole'&&palClick(X,Y,wxv,wyv))break;const kd=tool==='cab'?$('newCab').value:$('newKind').value;const i=addPole(wxv,wyv,kd);selectPole(i);break}
  case'noi':case'ngam':{if(hp<0){cmdMsg('Chọn đúng vào trụ hoặc tủ (bắt điểm ô vuông)');return}
   if(T.a==null){T.a=hp;$('cmdP').textContent='Chọn trụ/tủ tiếp theo (Esc hoặc chuột phải: kết thúc):';return}
   addSeg(T.a,hp,tool==='noi'?1:0);T.a=hp;break}
@@ -1186,10 +1186,10 @@ function renderPal(){const el=$('pal');if(!el)return;
   <div class="row"><button type="button" class="btn pri" id="palDraw">Vẽ trụ mới với ký hiệu này</button><button type="button" class="btn" id="palApply">Áp cho trụ đang chọn</button></div>
   <div class="palh">Tủ điều khiển</div><div class="chips">${[4,5].map(k=>chip('data-pc',k,tool==='cab'&&$('newCab').value==k,symSvg([[PBLK[k],0,0,0]]),KIND[k])).join('')}</div>
   <div class="palh">Cáp – chọn để vẽ</div><div class="chips"><button type="button" class="chip ${tool==='noi'?'on':''}" data-pt="noi"><span class="sw" style="border-color:var(--noi)"></span><span>Cáp nguồn nổi</span></button><button type="button" class="chip ${tool==='ngam'?'on':''}" data-pt="ngam"><span class="sw" style="border-color:var(--ngam);border-top-style:dashed"></span><span>Cáp nguồn ngầm</span></button></div>`;
- const go=()=>{syncNewOpt();if(canWrite){if(tool!=='pole')setTool('pole');$('cmdP').textContent='Chạm vị trí đặt '+comboName(PAL.k,PAL.lt,PAL.nl)+' (nhấn lại ký hiệu hoặc Esc: thoát):'}else cmdMsg('Bạn chỉ có quyền xem');renderPal()};
+ const go=()=>{syncNewOpt();if(canWrite){if(tool!=='pole')setTool('pole');$('cmdP').textContent=palPrompt()}else cmdMsg('Bạn chỉ có quyền xem');renderPal()};
  const off=b=>{if(!b.classList.contains('on'))return false;setTool('sel');renderPal();cmdMsg('Đã bỏ chọn ký hiệu – thoát lệnh vẽ');return true};
  for(const b of el.querySelectorAll('[data-pq]'))b.onclick=()=>{if(off(b))return;PSEL='pq:'+b.dataset.pq;const[k,lt]=b.dataset.pq.split(',');PAL.k=+k;PAL.lt=lt;PAL.nl=1;go()};
- for(const b of el.querySelectorAll('[data-pk]'))b.onclick=()=>{if(off(b))return;PSEL='pk:'+b.dataset.pk;PAL.k=+b.dataset.pk;if(PAL.k===2&&PAL.lt==='LED')PAL.lt='TT';go()};
+ for(const b of el.querySelectorAll('[data-pk]'))b.onclick=()=>{if(off(b))return;PSEL='pk:'+b.dataset.pk;PAL.k=+b.dataset.pk;go()};
  for(const b of el.querySelectorAll('[data-pl]'))b.onclick=()=>{if(off(b))return;PSEL='pl:'+b.dataset.pl;PAL.lt=b.dataset.pl;go()};
  for(const b of el.querySelectorAll('[data-pn]'))b.onclick=()=>{if(off(b))return;PSEL='pn:'+b.dataset.pn;PAL.nl=+b.dataset.pn;go()};
  for(const b of el.querySelectorAll('[data-pc]'))b.onclick=()=>{if(off(b))return;$('newCab').value=b.dataset.pc;setTool('cab');renderPal()};
@@ -1198,10 +1198,20 @@ function renderPal(){const el=$('pal');if(!el)return;
  $('palApply').onclick=()=>{if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}const i=selP;if(i<0||DEL[i]){cmdMsg('Chọn một trụ trên bản đồ trước, rồi bấm “Áp cho trụ đang chọn”');return}
   if(ISCAB(PK[i])){cmdMsg('Đối tượng đang chọn là tủ điều khiển, không áp ký hiệu trụ – đèn');return}
   const nl=['NONE','TT'].includes(PAL.lt)?1:PAL.nl;setPole(i,{k:NEW[i]||PAL.k!==kind0(P[i])?PAL.k:null,lt:PAL.lt,lts:null,nl:nl===nLamp0(i)?null:nl});selectPole(i);cmdMsg(`Đã đổi "${P[i][0]}" thành ${comboName(PAL.k,PAL.lt,nl)} – nhớ bấm Cập nhật`)}}
+// chọn riêng từng mục ký hiệu: Đèn / Số bộ = gắn vào trụ có sẵn (không tạo trụ); Trụ = chỉ trụ (không đèn) hoặc đổi loại trụ đang có; Ghép sẵn = trụ + đèn
+const PMODE=()=>!PSEL?'combo':PSEL.startsWith('pl:')?'lamp':PSEL.startsWith('pn:')?'num':PSEL.startsWith('pk:')?'pole':'combo';
+function palPrompt(){const m=PMODE();return m==='lamp'?`Chạm vào trụ để gắn ${PAL.lt==='NONE'?'"Không có đèn"':LTN[PAL.lt]} (nhấn lại ký hiệu hoặc Esc: thoát):`:m==='num'?`Chạm vào trụ để đặt ${PAL.nl} bộ đèn (nhấn lại hoặc Esc: thoát):`:m==='pole'?`Chạm chỗ trống để đặt ${KIND[PAL.k]} (không đèn), chạm vào trụ có sẵn để đổi loại trụ (Esc: thoát):`:'Chạm vị trí đặt '+comboName(PAL.k,PAL.lt,PAL.nl)+' (nhấn lại ký hiệu hoặc Esc: thoát):'}
+function palClick(X,Y,x,y){const m=PMODE();if(m==='combo')return false;const i=hitPole(X,Y,16);
+ if(m==='pole'){if(i<0||ISCAB(PK[i])){const lt0=PAL.lt,nl0=PAL.nl;PAL.lt='NONE';PAL.nl=1;try{const j=addPole(x,y,PAL.k);selectPole(j)}finally{PAL.lt=lt0;PAL.nl=nl0}return true}
+  setPole(i,{k:NEW[i]||PAL.k!==kind0(P[i])?PAL.k:null});selectPole(i);cmdMsg(`Đã đổi loại trụ "${P[i][0]}" thành ${KIND[PAL.k]} – giữ nguyên đèn`);return true}
+ if(i<0||ISCAB(PK[i])){cmdMsg(m==='lamp'?'Chạm đúng vào một trụ để gắn đèn – ký hiệu đèn không tạo trụ mới':'Chạm đúng vào một trụ để đặt số bộ đèn');return true}
+ if(m==='lamp'){const L=lampList(i),n=Math.max(1,L.length);const nl=['NONE','TT'].includes(PAL.lt)?1:n;setPole(i,{lt:PAL.lt,lts:null,nl:nl===nLamp0(i)?null:nl});selectPole(i);cmdMsg(`Đã gắn ${PAL.lt==='NONE'?'"không có đèn"':LTN[PAL.lt]+(nl>1?' × '+nl:'')} cho trụ "${P[i][0]}" – trụ giữ nguyên`);return true}
+ const L=lampList(i);if(!L.length){cmdMsg('Trụ chưa có đèn – chọn loại đèn trước');return true}const lt=L[0]==='TT'?'TT':L[0];setPole(i,{lt,lts:null,nl:PAL.nl===nLamp0(i)?null:PAL.nl});selectPole(i);cmdMsg(`Đã đặt ${PAL.nl} bộ đèn cho trụ "${P[i][0]}"`);return true}
 function syncNewOpt(){$('newKind').value=PAL.k;$('newLt').value=PAL.lt;$('newNl').value=PAL.nl}
 $('newKind').onchange=()=>{PAL.k=+$('newKind').value;renderPal()};$('newLt').onchange=()=>{PAL.lt=$('newLt').value;renderPal()};$('newNl').onchange=()=>{PAL.nl=+$('newNl').value;renderPal()};
 renderPal();syncNewOpt();
-{const _st=setTool;setTool=function(t){const r=_st.apply(this,arguments);if(typeof renderPal==='function')renderPal();return r}}
+for(const b of document.querySelectorAll('[data-tool]'))b.addEventListener('click',()=>{PSEL=null},true);
+{const _st=setTool;setTool=function(t){if(t!=='pole')PSEL=null;const r=_st.apply(this,arguments);if(typeof renderPal==='function')renderPal();return r}}
 // ---------- nhập loại đèn (LED / HPS / MH) theo từng trụ từ file thống kê (.xlsx / .csv)
 const unacc2=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[đĐ]/g,'d').toLowerCase().trim();
 function lampOf(s){const l=String(s??'').toLowerCase();if(!l.trim())return null;
@@ -2024,7 +2034,7 @@ function dwCmd(raw){const s=raw.trim();if(tool==='dw'&&DW.cur){if(!s)return fals
  if(['dt','div','ds'].includes(tool)&&(/^[-\d.@,<\s]+$/.test(s)||/^[GNK]$/i.test(s)))return false;
  if(tool==='ds'&&!DCMD[c0])return false;
  if(c0==='TR'||c0==='TRIM'||c0==='TM'){HIST.push(s);startCmd(cmdTrimLike(false));return true}
- if(c0==='TRU'){HIST.push(s);setTool('pole');return true}
+ if(c0==='TRU'){HIST.push(s);PSEL=null;setTool('pole');return true}
  if(c0==='DTR'){return false}
  if(c0==='E'||c0==='ERASE'){if(DSEL.size){startCmd(cmdErase());return true}return false}
  if(c0==='M'||c0==='MOVE'){if(DSEL.size){startCmd(cmdMove(false));return true}return false}
