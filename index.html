@@ -1831,6 +1831,7 @@ function getPt(X,Y,base){const R=12;let best=null;
 function parsePt(s,last){s=s.trim();let m;
  if((m=s.match(/^@\s*(-?[\d.]+)\s*<\s*(-?[\d.]+)$/))){if(!last)return null;const d=+m[1],a=+m[2];return[last[0]+d*cosd(a),last[1]+d*sind(a)]}
  if((m=s.match(/^@\s*(-?[\d.]+)\s*[,;]\s*(-?[\d.]+)$/))){if(!last)return null;return[last[0]+ +m[1],last[1]+ +m[2]]}
+ if((m=s.match(/^(-?\d+),(\d+)$/))&&last&&Math.abs(+m[1])<50000)s=m[1]+'.'+m[2];
  if((m=s.match(/^(-?[\d.]+)\s*[,;]\s*(-?[\d.]+)$/))){let x=+m[1],y=+m[2];if(Math.abs(x)>50000||Math.abs(y)>50000){x-=D.X0;y-=D.Y0}return[x,y]}
  if((m=s.match(/^(-?[\d.]+)$/))&&last){const d=+m[1],q=getPt(mouse[0],mouse[1],last);let a=Math.atan2(q.y-last[1],q.x-last[0]);return[last[0]+d*Math.cos(a),last[1]+d*Math.sin(a)]}
  return null}
@@ -2639,6 +2640,24 @@ helpShow=function(){xModal('Bảng lệnh AutoCAD 2D (F1)',`<div class="row" sty
  inp.addEventListener('keydown',e=>{if(!box||box.hidden||!list.length)return;if(e.key==='ArrowDown'){e.preventDefault();nav=1;ix=(ix+1)%list.length;hl()}else if(e.key==='ArrowUp'){e.preventDefault();nav=1;ix=(ix-1+list.length)%list.length;hl()}
   else if(e.key==='Tab'){e.preventDefault();e.stopImmediatePropagation();inp.value=list[ix].a;hide()}else if(e.key==='Enter'){if(nav){e.preventDefault();e.stopImmediatePropagation();pick(ix)}else hide()}else if(e.key==='Escape')hide()},true)}
 
+// ===== CO (sao chép trụ/đèn) nhập số như AutoCAD: gõ khoảng cách theo hướng chuột, @dx,dy, @d<góc, x,y – gõ liên tục để sao nhiều bản
+{const P_=()=>`CO · ${CPY.items.length} trụ – điểm đặt bản sao: bấm, hoặc gõ khoảng cách theo hướng chuột (vd 30), @dx,dy, @dài<góc${CPY.chain?' · NỐI TIẾP: tính từ bản vừa đặt':''} hoặc [${CPY.chain?'Từ điểm gốc(N)':'Nối tiếp(N)'}/Mảng(A)/Hoàn tác(U)] – Enter kết thúc:`;
+ const place=q=>{const before=CPY.n;XT.copy(0,0,q[0],q[1],-1);if(CPY.n>before){CPY.last=q;CPY.hist=(CPY.hist||0)+1;$('cmdP').textContent=P_();draw();return true}return false};
+ {const _xc=xCmd;xCmd=function(raw){const s=raw.trim();if(tool!=='copy'||!CPY.items.length)return _xc(raw);const u=s.toUpperCase();
+  if(!CPY.base){const q=parsePt(s,null);if(q){CPY.base=q;CPY.last=null;CPY.pickedBase=true;$('cmdP').textContent=P_();draw();return true}return _xc(raw)}
+  if(CPY.arr){const n=parseInt(s,10);if(CPY.arr===1){if(n>=2){CPY.arrN=n;CPY.arr=2;$('cmdP').textContent=`CO · Mảng ${n} bản – khoảng cách giữa 2 bản (gõ số theo hướng chuột hoặc bấm điểm bản thứ 2):`;return true}cmdMsg('Gõ số bản ≥ 2');return true}
+   const q=parsePt(s,CPY.base);if(q){const dx=q[0]-CPY.base[0],dy=q[1]-CPY.base[1];for(let k_=1;k_<CPY.arrN;k_++)XT.copy(0,0,CPY.base[0]+dx*k_,CPY.base[1]+dy*k_,-1);CPY.arr=0;CPY.last=[CPY.base[0]+dx*(CPY.arrN-1),CPY.base[1]+dy*(CPY.arrN-1)];cmdMsg(`Đã sao ${CPY.arrN-1} bản theo mảng, cách đều ${fmt(Math.hypot(dx,dy),1)} m – nhớ bấm Cập nhật`);$('cmdP').textContent=P_();draw();return true}return true}
+  if(u==='N'){CPY.chain=!CPY.chain;$('cmdP').textContent=P_();cmdMsg(CPY.chain?'Nối tiếp: mỗi khoảng cách gõ vào tính từ bản vừa đặt (vd gõ 30, 30, 30 → cách đều 30 m)':'Từ điểm gốc: khoảng cách tính từ điểm gốc như AutoCAD');return true}
+  if(u==='A'){CPY.arr=1;$('cmdP').textContent='CO · Mảng – số bản (tính cả bản gốc):';return true}
+  if(u==='U'){if(CPY.hist){undo();CPY.hist--;CPY.n=Math.max(0,CPY.n-1);CPY.last=null;cmdMsg('Đã bỏ bản sao vừa đặt');draw()}return true}
+  const ref=CPY.chain&&CPY.last?CPY.last:CPY.base;const q=parsePt(s,ref);
+  if(q){if(!place(q))cmdMsg('Điểm đặt trùng điểm gốc – gõ khoảng cách > 0');return true}return _xc(raw)}}
+ {const _st=copyStart;copyStart=function(){CPY.chain=false;CPY.last=null;CPY.arr=0;CPY.hist=0;return _st.apply(this,arguments)}}
+ // điểm gốc chọn bằng chuột xong thì hiện dòng nhắc đầy đủ; tính từ bản vừa đặt khi đang nối tiếp
+ {const _xt=XT.copy;XT.copy=function(X,Y,wx_,wy_,hp){const hadBase=!!CPY.base,n0=CPY.n;let to=null;if(hadBase&&CPY.items.length){to=hp>=0?[PX[hp],PY[hp]]:[wx_,wy_]}const r=_xt.apply(this,arguments);
+   if(!hadBase&&CPY.base){CPY.last=null;$('cmdP').textContent=P_()}else if(to&&CPY.n>n0){CPY.last=to;CPY.hist=(CPY.hist||0)+1;$('cmdP').textContent=P_()}return r}}}
+{const _dr=dwRender;dwRender=function(g){_dr(g);if(tool==='copy'&&CPY.chain&&CPY.last&&mouse){const q=getPt(mouse[0],mouse[1],CPY.last);g.save();g.strokeStyle='#e2632f';g.setLineDash([3,3]);g.beginPath();g.moveTo(sx(CPY.last[0]),sy(CPY.last[1]));g.lineTo(sx(q.x),sy(q.y));g.stroke();g.restore();label(g,`nối tiếp ${fmt(Math.hypot(q.x-CPY.last[0],q.y-CPY.last[1]),1)} m`,mouse[0]+12,mouse[1]+8)}}}
+
 // ---------- init
 colors();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{colors();draw()});
 new MutationObserver(()=>{colors();draw()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
@@ -2647,7 +2666,7 @@ window.__T={setTool,toolClick,sx,sy,get N(){return N},P:()=>P,PX:()=>PX,PY:()=>P
 })();
 </script>
 <script>
-(function(){const V='1794758410';
+(function(){const V='1794760451';
  async function raw(n){let r=null;try{r=await fetch(n+'.gz?v='+V)}catch(e){}
   if(r&&r.ok){const u=new Uint8Array(await r.arrayBuffer());if(u[0]===0x1f&&u[1]===0x8b){if(!('DecompressionStream' in window))throw new Error('nogz');return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}return new TextDecoder().decode(u)}
   throw new Error('miss '+n)}
