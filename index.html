@@ -1026,47 +1026,21 @@ function sheetCentersAA(t){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i
  const out=[[best.fa.c[0],best.fa.c[1],best.fa.s],[best.fb.c[0],best.fb.c[1],best.fb.s]];out.sort((a,b)=>(b[1]-a[1])||(a[0]-b[0]));return out}
 // chia bản vẽ theo trục tuyến: xoay khung theo hướng tuyến, cắt đoạn có đường nối A–A, B–B… (giữ tỉ lệ 1/1000)
 function sheetCenters(t){const old=sheetCentersAA(t);if(old.length<=1&&(!old[0]||(old[0][2]||1)<=1))return old;
- const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])ids.push(i);const pts=ids.map(i=>[PX[i],PY[i]]);const cb=cabOf(t);if(cb)pts.push([cb[0],cb[1]]);
- const fw=FR.fit[2]-FR.fit[0]-14,fh=FR.fit[3]-FR.fit[1]-14,fc=[(FR.fit[0]+FR.fit[2])/2,(FR.fit[1]+FR.fit[3])/2];
- const AV=(FR.avoid||[]).map(a=>[a[0]-fc[0]-2,a[1]-fc[1]-2,a[2]-fc[0]+2,a[3]-fc[1]+2]);
- const mx=pts.reduce((v,p)=>v+p[0],0)/pts.length,my=pts.reduce((v,p)=>v+p[1],0)/pts.length;let sxx=0,syy=0,sxy=0;for(const[x,y]of pts){sxx+=(x-mx)**2;syy+=(y-my)**2;sxy+=(x-mx)*(y-my)}
- const th0=0.5*Math.atan2(2*sxy,sxx-syy);const nz=a=>{while(a>Math.PI/2+1e-9)a-=Math.PI;while(a<=-Math.PI/2+1e-9)a+=Math.PI;return a};
- const cand=[0,nz(th0),nz(th0+Math.PI/2),Math.PI/2].filter((a,i,A)=>A.findIndex(b=>Math.abs(b-a)<1e-3)===i);
- const vs=A=>{let a=1e18,b=-1e18;for(const p of A){a=Math.min(a,p[1]);b=Math.max(b,p[1])}return[a,b]};
- // dải theo trục tuyến (tuyến dài một hướng)
- const strip=(UV,th)=>{UV=UV.slice().sort((a,b)=>a[0]-b[0]);const segs=[];let lo=UV[0][0]-6,cur=[];
-  for(const p of UV){const tv=vs(cur.concat([p]));if(p[0]-lo<=fw&&tv[1]-tv[0]<=fh){cur.push(p);continue}
-   if(!cur.length)return null;const last=cur[cur.length-1][0];const cut=Math.min((last+p[0])/2,lo+fw);segs.push({P:cur,lo,hi:cut});lo=p[0]-cut>fw-6?p[0]-6:cut;cur=[p]}
-  segs.push({P:cur,lo,hi:Math.max(cur[cur.length-1][0]+6,lo+1)});
-  const sh=segs.map(g=>{const[v0,v1]=vs(g.P);let uc=(g.lo+g.hi)/2,vc=(v0+v1)/2;
-   if(AV.length){const su=Math.max(0,(fw-(g.hi-g.lo))/2),sv=Math.max(0,(fh-(v1-v0))/2);const hit=(a,b)=>{let n=0;for(const[u,v]of g.P)for(const r of AV)if(u>=a+r[0]&&u<=a+r[2]&&v>=b+r[1]&&v<=b+r[3])n++;return n};
-    let bb=[hit(uc,vc),0,uc,vc];if(bb[0])for(let i=-8;i<=8;i++)for(let j=-8;j<=8;j++){const a=uc+i/8*su,b=vc+j/8*sv,h=hit(a,b),d=Math.hypot(i*su,j*sv);if(h<bb[0]||(h===bb[0]&&d<bb[1]))bb=[h,d,a,b]}uc=bb[2];vc=bb[3]}return{uc,vc}});
-  const ed=[];for(let k=0;k+1<segs.length;k++)ed.push({a:k,b:k+1,u:segs[k+1].lo});return{th,sh,ed,kind:0}};
- // lưới theo trục tuyến (mạng nhiều nhánh)
- const grid=(UV,th)=>{let u0=1e18,v0=1e18;for(const[u,v]of UV){u0=Math.min(u0,u);v0=Math.min(v0,v)}let best=null;
-  for(const ox of[0,.25,.5,.75])for(const oy of[0,.25,.5,.75]){const G=new Map();for(const[u,v]of UV){const c=Math.floor((u-u0+ox*fw)/fw),r=Math.floor((v-v0+oy*fh)/fh);G.set(c+','+r,[c,r])}if(!best||G.size<best.G.size)best={G,ox,oy}}
-  const cells=[...best.G.values()].sort((a,b)=>(b[1]-a[1])||(a[0]-b[0]));const ix=new Map(cells.map((c,k)=>[c.join(','),k]));
-  const U=c=>u0-best.ox*fw+c*fw,V=r=>v0-best.oy*fh+r*fh;
-  const sh=cells.map(([c,r])=>({uc:U(c)+fw/2,vc:V(r)+fh/2}));const ed=[];
-  cells.forEach(([c,r],k)=>{const R=ix.get((c+1)+','+r);if(R!=null)ed.push({a:k,b:R,u:U(c+1),seg:[V(r),V(r+1)]});const T=ix.get(c+','+(r-1));if(T!=null)ed.push({a:k,b:T,v:V(r),seg:[U(c),U(c+1)]})});
-  return{th,sh,ed,kind:1}};
- let best=null;
- for(const th of cand){const c=Math.cos(th),sn=Math.sin(th),UV=pts.map(([x,y])=>[x*c+y*sn,-x*sn+y*c]);
-  for(const p of[strip(UV,th),grid(UV,th)]){if(!p)continue;const sc=p.sh.length*10+p.kind*0.5+Math.abs(th);if(!best||sc<best.sc)best={...p,sc}}}
- if(!best)return old;
- const lab=k=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ';let s_='';k++;while(k>0){k--;s_=A[k%24]+s_;k=Math.floor(k/24)}return s_};
- const c=Math.cos(best.th),sn=Math.sin(best.th);const out=best.sh.map(g=>[g.uc*c-g.vc*sn,g.uc*sn+g.vc*c,1,0,best.th,[]]);
- best.ed.forEach((e,k)=>{const L=lab(k);out[e.a][5].push({...e,lab:L,to:e.b+1});out[e.b][5].push({...e,lab:L,to:e.a+1})});return out}
+ // tủ vượt khung: không tách bản – xuất 1 bản vẽ tổng thể tỉ lệ 1/1000, khung tên đặt cạnh bên phải để người dùng tự cắt
+ const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])ids.push(i);const b=[1e18,1e18,-1e18,-1e18];const ad=(x,y)=>{b[0]=Math.min(b[0],x);b[1]=Math.min(b[1],y);b[2]=Math.max(b[2],x);b[3]=Math.max(b[3],y)};
+ for(const i of ids)ad(PX[i],PY[i]);const cb=cabOf(t);if(cb)ad(cb[0],cb[1]);const B=[b[0]-35,b[1]-35,b[2]+35,b[3]+35];
+ const fc=[(FR.fit[0]+FR.fit[2])/2,(FR.fit[1]+FR.fit[3])/2];const cx=B[2]+40-(FR.sheet[0]-fc[0]),cy=B[3]-(FR.sheet[3]-fc[1]);
+ return[[cx,cy,1,2,0,[],B]]}
 function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t&&!DEL[i])ids.push(i);if(!ids.length)return null;
  const s=center[2]||1;const b=[center[0]-1,center[1]-1,center[0]+1,center[1]+1];
  const fc=[(FR.fit[0]+FR.fit[2])/2,(FR.fit[1]+FR.fit[3])/2],bc=[(b[0]+b[2])/2,(b[1]+b[3])/2];
  const MX=lx=>bc[0]+(lx-fc[0])*s,MY=ly=>bc[1]+(ly-fc[1])*s;
- const NF0=!!center[3],TH=NF0?0:(center[4]||0),ROT=Math.abs(TH)>1e-9,THD=TH*180/Math.PI,Cc=Math.cos(TH),Sn=Math.sin(TH),CUTS=NF0?[]:(center[5]||[]);
+ const ALL=center[3]===2,NF0=!!center[3],TH=NF0?0:(center[4]||0),ROT=Math.abs(TH)>1e-9,THD=TH*180/Math.PI,Cc=Math.cos(TH),Sn=Math.sin(TH),CUTS=NF0?[]:(center[5]||[]);
  const R0=(x,y)=>{const dx=x-bc[0],dy=y-bc[1];return[bc[0]+dx*Cc-dy*Sn,bc[1]+dx*Sn+dy*Cc]},Ri=(x,y)=>{const dx=x-bc[0],dy=y-bc[1];return[bc[0]+dx*Cc+dy*Sn,bc[1]-dx*Sn+dy*Cc]};
  const SHB=(()=>{const b=[1e18,1e18,-1e18,-1e18];for(const[x,y]of[[FR.sheet[0],FR.sheet[1]],[FR.sheet[2],FR.sheet[1]],[FR.sheet[0],FR.sheet[3]],[FR.sheet[2],FR.sheet[3]]]){const p=R0(MX(x),MY(y));b[0]=Math.min(b[0],p[0]);b[1]=Math.min(b[1],p[1]);b[2]=Math.max(b[2],p[0]);b[3]=Math.max(b[3],p[1])}return b})();
  const out=[];const w=(c,v)=>out.push(String(c),String(v));const f=v=>(+v).toFixed(3);const X=x=>(x+D.X0).toFixed(3),Y=y=>(y+D.Y0).toFixed(3);
  const LAY=[['KHUNG',7,'CONTINUOUS'],['KHUNG_CHU',7,'CONTINUOUS'],['KHUNG_TTC',3,'CONTINUOUS'],['TTC',3,'CONTINUOUS'],['HTGT_LINE',8,'CONTINUOUS'],['HT_GT_TIM',253,'CONTINUOUS'],['SONG_RACH',5,'CONTINUOUS'],['RANH_PHUONG_MOI',30,'DASHDOT'],['TEN_DUONG',73,'CONTINUOUS'],['TRU',7,'CONTINUOUS'],['DEN',7,'CONTINUOUS'],['TEN_TRU',7,'CONTINUOUS'],['TU_DIEU_KHIEN',7,'CONTINUOUS'],['CABLENOI',4,'CONTINUOUS'],['02_CABLENGAM',6,'DASHED2'],['SO_MET',2,'CONTINUOUS'],['SO_NHA',30,'CONTINUOUS'],['NOI_BAN_VE',1,'CONTINUOUS']].concat(typeof dwLayFor==='function'?dwLayFor(t):[]);
- w(0,'SECTION');w(2,'HEADER');w(9,'$ACADVER');w(1,'AC1009');w(9,'$LTSCALE');w(40,s);hdrExt(w,SHB[0]+D.X0,SHB[1]+D.Y0,SHB[2]+D.X0,SHB[3]+D.Y0);w(0,'ENDSEC');
+ w(0,'SECTION');w(2,'HEADER');w(9,'$ACADVER');w(1,'AC1009');w(9,'$LTSCALE');w(40,s);if(ALL&&center[6]){const B=center[6];SHB[0]=Math.min(SHB[0],B[0]);SHB[1]=Math.min(SHB[1],B[1]);SHB[2]=Math.max(SHB[2],B[2]);SHB[3]=Math.max(SHB[3],B[3]+20)}hdrExt(w,SHB[0]+D.X0,SHB[1]+D.Y0,SHB[2]+D.X0,SHB[3]+D.Y0);w(0,'ENDSEC');
  w(0,'SECTION');w(2,'TABLES');vportTab(w,SHB[0]+D.X0,SHB[1]+D.Y0,SHB[2]+D.X0,SHB[3]+D.Y0,ROT?{th:TH,cx:bc[0]+D.X0,cy:bc[1]+D.Y0,h:(FR.sheet[3]-FR.sheet[1])*s*1.05,w:(FR.sheet[2]-FR.sheet[0])*s}:null);w(0,'TABLE');w(2,'LTYPE');w(70,3);
  w(0,'LTYPE');w(2,'CONTINUOUS');w(70,0);w(3,'Solid line');w(72,65);w(73,0);w(40,0.0);
  w(0,'LTYPE');w(2,'DASHED2');w(70,0);w(3,'Dashed (.5x) _ _ _ _');w(72,65);w(73,2);w(40,3.75);w(49,2.5);w(49,-1.25);
@@ -1086,7 +1060,7 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
  const txt=(lay,x,y,h,rot,str,h72,h73,sty,wf)=>{rot=((+rot%360)+360)%360;let bx=x,by=y;if(h72||h73){let W_=0;for(const c of String(str))W_+=cwx(c);W_*=h*(wf||1);const dx=h72===1?-W_/2:h72===2?-W_:0,dy=h73===2?-h/2:h73===3?-h:h73===1?0:0,ra=rot*Math.PI/180;bx=x+dx*Math.cos(ra)-dy*Math.sin(ra);by=y+dx*Math.sin(ra)+dy*Math.cos(ra)}
   w(0,'TEXT');w(8,lay);w(10,X(bx));w(20,Y(by));w(30,0);w(40,(+h).toFixed(3));w(1,dxfStr(str));if(rot||ROT)w(50,(+rot).toFixed(2));if(wf&&wf<0.999)w(41,(+wf).toFixed(3));w(7,sty||'ARIAL');if(h72||h73){w(72,h72);w(11,X(x));w(21,Y(y));w(31,0);w(73,h73)}};
  // khung
- const NF=!!center[3];const txF=(lay,x,y,h,r,str,a1,a2,font,wf)=>{if(!ROT)return txt(lay,x,y,h,r,str,a1,a2,font,wf);const p=R0(x,y);txt(lay,p[0],p[1],h,(r||0)+THD,str,a1,a2,font,wf)};
+ const NF=!!center[3]&&!ALL;const txF=(lay,x,y,h,r,str,a1,a2,font,wf)=>{if(!ROT)return txt(lay,x,y,h,r,str,a1,a2,font,wf);const p=R0(x,y);txt(lay,p[0],p[1],h,(r||0)+THD,str,a1,a2,font,wf)};
  if(!NF)for(const l of FR.L){if(l.length===5&&Math.abs(l[2]+147.66)<0.2&&Math.abs(l[4]+147.66)<0.2)continue;const xs=[];for(let q=1;q<l.length;q+=2)xs.push(...R0(MX(l[q]),MY(l[q+1])));if(l[0]>=2){for(let q=0;q+3<xs.length;q+=2){w(0,'LINE');w(8,l[0]===2?'CABLENOI':'02_CABLENGAM');w(10,X(xs[q]));w(20,Y(xs[q+1]));w(30,0);w(11,X(xs[q+2]));w(21,Y(xs[q+3]));w(31,0)}}else pl(l[0]===1?'KHUNG_TTC':'KHUNG',xs,false)}
  if(!NF)for(const tr of FR.T){const p0=tr.slice(1).map((v,q)=>q%2?MY(v):MX(v)),p=[];for(let q=0;q<p0.length;q+=2)p.push(...R0(p0[q],p0[q+1]));w(0,'SOLID');w(8,tr[0]?'KHUNG_TTC':'KHUNG');w(10,X(p[0]));w(20,Y(p[1]));w(30,0);w(11,X(p[2]));w(21,Y(p[3]));w(31,0);w(12,X(p[4]));w(22,Y(p[5]));w(32,0);w(13,X(p[4]));w(23,Y(p[5]));w(33,0)}
  const cnt={};const wc={};for(const i of ids){const d=D.duong[P[i][7]];if(d)cnt[d]=(cnt[d]||0)+1;const wn=WARDS[PW[i]];wc[wn]=(wc[wn]||0)+1}
@@ -1128,7 +1102,7 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
   // chữ trên logo (cong) giữ nguyên
   for(const[x,y,h,r,str,a1,a2,font,role,box]of FR.TX)if(!box&&!role&&String(str).length<=2&&h<1.5)txF('KHUNG_CHU',MX(x),MY(y),h*s,r,str,a1,a2,font)}
  // nền bản đồ trong khung
- const rects=NF?[[-1e9,-1e9,1e9,1e9]]:FR.clip.map(c=>[MX(c[0]),MY(c[1]),MX(c[2]),MY(c[3])]);
+ const rects=NF||ALL?[[-1e9,-1e9,1e9,1e9]]:FR.clip.map(c=>[MX(c[0]),MY(c[1]),MX(c[2]),MY(c[3])]);
  const CR=corridor(t);
  const inR=(x,y)=>{const p=ROT?Ri(x,y):[x,y];return rects.some(r=>p[0]>=r[0]&&p[0]<=r[2]&&p[1]>=r[1]&&p[1]<=r[3])};
  const rectsW=rects.map(r=>{if(!ROT)return r;const b=[1e18,1e18,-1e18,-1e18];for(const[x,y]of[[r[0],r[1]],[r[2],r[1]],[r[0],r[3]],[r[2],r[3]]]){const p=R0(x,y);b[0]=Math.min(b[0],p[0]);b[1]=Math.min(b[1],p[1]);b[2]=Math.max(b[2],p[0]);b[3]=Math.max(b[3],p[1])}return b});
@@ -1164,8 +1138,9 @@ function sheetDxf(t,no,tot,center){const ids=[];for(let i=0;i<N;i++)if(PT[i]===t
    for(const[a0,a1]of parts)if(a1-a0>0.01)pl('NOI_BAN_VE',[P1[0]+(P2[0]-P1[0])*a0,P1[1]+(P2[1]-P1[1])*a0,P1[0]+(P2[0]-P1[0])*a1,P1[1]+(P2[1]-P1[1])*a1],false,0.8*s)}const side=cu.to>no?-1:1;
   for(const[Q,dir]of[[P1,-1],[P2,1]]){const qx=Q[0]+dir*4.5*s*ax[0],qy=Q[1]+dir*4.5*s*ax[1];w(0,'CIRCLE');w(8,'NOI_BAN_VE');w(10,X(qx));w(20,Y(qy));w(30,0);w(40,(4*s).toFixed(3));txt('NOI_BAN_VE',qx,qy,4.2*s,THD,cu.lab,1,2,'ARIAL')}
   const mid=[(P1[0]+P2[0])/2,(P1[1]+P2[1])/2],nx=hor?-Sn:Cc,ny=hor?Cc:Sn,off=((bc[0]-mid[0])*nx+(bc[1]-mid[1])*ny>0?1:-1)*3.5*s;txt('NOI_BAN_VE',mid[0]+off*nx,mid[1]+off*ny,2.6*s,THD+(hor?0:90),`ĐƯỜNG NỐI ${cu.lab}–${cu.lab} · NỐI TIẾP BẢN VẼ SỐ ${String(cu.to).padStart(2,'0')}/${String(tot).padStart(2,'0')}`,1,2,'ARIAL')}
- if(typeof dwDxf==='function')dwDxf(t,w,X,Y,txt,NF?null:inR);
- w(0,'ENDSEC');w(0,'EOF');return{dxf:out.join('\r\n')+'\r\n',scale:Math.round(1000*s)}}
+ if(typeof dwDxf==='function')dwDxf(t,w,X,Y,txt,NF||ALL?null:inR);
+ if(ALL&&center[6]){const B=center[6];txt('KHUNG_CHU',B[0],B[3]+14,6,0,'SƠ ĐỒ TỔNG THỂ TUYẾN CHIẾU SÁNG – TỦ ĐIỀU KHIỂN: '+D.tu[t].toUpperCase(),0,0,'TNR');txt('KHUNG_CHU',B[0],B[3]+6,3.5,0,'Tỉ lệ 1/1000 · bản vẽ tổng chưa cắt khung – sao chép khung tên bên phải để tự cắt theo nhu cầu',0,0,'TNR')}
+ w(0,'ENDSEC');w(0,'EOF');return{dxf:out.join('\r\n')+'\r\n',scale:Math.round(1000*s),ext:SHB.map((v,i)=>v+(i%2?D.Y0:D.X0))}}
 window.__zs=ts=>sheetsZip(ts);window.__nf=t=>{const cs=sheetCenters(t);if(!cs.length)return null;const r=sheetDxf(t,1,1,[cs[0][0],cs[0][1],1,1]);return r&&r.dxf};window.__sc=t=>sheetCenters(t);window.__sco=t=>sheetCentersAA(t);window.__one=ts=>oneDxf(ts);window.__lc=i=>{const d=lampDraw(i)[0];const c=lampCenter(i,d[2]);return[sx(c[0]),sy(c[1])]};window.__sheet=(t)=>{const cs=sheetCenters(t);return cs.map((c,k)=>sheetDxf(t,k+1,cs.length,c))};
 function zipMany(files){const enc=new TextEncoder();const parts=[],cd=[];let off=0;
  for(const fl of files){const data=enc.encode(fl.data),nm=enc.encode(fl.name),crc=CRC(data);
@@ -1182,8 +1157,8 @@ function oneDxf(ts){const W=FR.sheet[2]-FR.sheet[0],H=FR.sheet[3]-FR.sheet[1],G=
  for(const t of ts){const cs=sheetCenters(t);if(!cs.length)continue;row++;nt++;
   const rowH=Math.max(...cs.map(c=>H*(c[2]||1)));let curX=0;
   cs.forEach((c,col)=>{const r=sheetDxf(t,col+1,cs.length,c);if(!r)return;n++;const L=r.dxf.split('\r\n');const sc=c[2]||1,Ws=W*sc,Hs=H*sc;
-   const mnx=c[0]+(FR.sheet[0]-fc[0])*sc+D.X0,mny=c[1]+(FR.sheet[1]-fc[1])*sc+D.Y0;if(!base){base=[mnx,mny];rowB=mny}else if(col===0)rowB=rowB-rowH-G;
-   const ox=base[0]+curX-mnx,oy=rowB-mny;curX+=Ws+G;let s=-1,e=-1;
+   let mnx=c[0]+(FR.sheet[0]-fc[0])*sc+D.X0,mny=c[1]+(FR.sheet[1]-fc[1])*sc+D.Y0,Ws_=Ws,Hs_=Hs;if(c[3]===2&&r.ext){mnx=r.ext[0];mny=r.ext[1];Ws_=r.ext[2]-r.ext[0];Hs_=r.ext[3]-r.ext[1]}if(!base){base=[mnx,mny];rowB=mny}else if(col===0)rowB=rowB-(c[3]===2?Hs_:rowH)-G;
+   const ox=base[0]+curX-mnx,oy=rowB-mny;curX+=Ws_+G;let s=-1,e=-1;
    for(let q=0;q<L.length-1;q+=2){if(s<0&&L[q].trim()==='2'&&L[q+1]==='ENTITIES')s=q+2;else if(s>0&&L[q].trim()==='0'&&L[q+1]==='ENDSEC'){e=q;break}}
    if(!head)head=L.slice(0,s);
    const th=c[4]||0;if(!th){for(let q=s;q<e;q+=2){const cd=+L[q];let v=L[q+1];if(cd>=10&&cd<=18)v=(+v+ox).toFixed(3);else if(cd>=20&&cd<=28)v=(+v+oy).toFixed(3);ents.push(L[q],v)}}
@@ -1193,7 +1168,7 @@ function oneDxf(ts){const W=FR.sheet[2]-FR.sheet[0],H=FR.sheet[3]-FR.sheet[1],G=
      if(cd>=20&&cd<=28&&pend[cd-10]){const[ix,x]=pend[cd-10];delete pend[cd-10];const y=+v,dx=x-ccx,dy=y-ccy;ents[ix]=(ccx+dx*co-dy*si+ox).toFixed(3);v=(ccy+dx*si+dy*co+oy).toFixed(3);ents.push(L[q],v);continue}
      if(cd===50||cd===51)v=((((+v-thd)%360)+360)%360).toFixed(3);
      ents.push(L[q],v)}}
-   ext[0]=Math.min(ext[0],mnx+ox);ext[1]=Math.min(ext[1],mny+oy);ext[2]=Math.max(ext[2],mnx+ox+Ws);ext[3]=Math.max(ext[3],mny+oy+Hs)})}
+   ext[0]=Math.min(ext[0],mnx+ox);ext[1]=Math.min(ext[1],mny+oy);ext[2]=Math.max(ext[2],mnx+ox+Ws_);ext[3]=Math.max(ext[3],mny+oy+Hs_)})}
  if(!head)return null;
  const setV=(key,x,y)=>{const q=head.indexOf(key);if(q>=0){head[q+2]=x.toFixed(3);head[q+4]=y.toFixed(3)}};
  setV('$EXTMIN',ext[0],ext[1]);setV('$EXTMAX',ext[2],ext[3]);setV('$LIMMIN',ext[0],ext[1]);setV('$LIMMAX',ext[2],ext[3]);
@@ -1228,7 +1203,7 @@ function zip(name,str){const data=new TextEncoder().encode(str),nm=new TextEncod
  const saveSeq=async files=>{for(const f of files){await go(f.name,f.data);await new Promise(r=>setTimeout(r,STANDALONE?400:50))}};
  window.__exportSheet=t=>{if(!cntOf(t)){$('exNote').textContent=`Tủ ${D.tu[t]} chưa có dữ liệu trụ trong app nên chưa xuất được bản vẽ.`;return}if(!BASE){$('exNote').textContent='Chờ bản đồ nền tải xong rồi xuất lại.';return}
   const r=oneDxf([t]);if(!r)return;const nm=unacc(D.tu[t]).replace(/[\\/:*?"<>|]+/g,'-').trim();
-  $('exNote').textContent=`Tủ ${D.tu[t]}: ${r.n} bản vẽ tỉ lệ 1/1000 gộp trong 1 file DXF (nền chỉ thể hiện tuyến có đèn và tên đường/hẻm trên tuyến).`;
+  {const cs_=sheetCenters(t);$('exNote').textContent=cs_[0]&&cs_[0][3]===2?`Tủ ${D.tu[t]} lớn hơn 1 khung A3 tỉ lệ 1/1000: xuất 1 bản vẽ tổng thể (không tách), khung tên đặt bên phải để bạn sao chép và tự cắt.`:`Tủ ${D.tu[t]}: bản vẽ khung tỉ lệ 1/1000 (nền chỉ thể hiện tuyến có đèn và tên đường/hẻm trên tuyến).`}
   if(STANDALONE)saveSeq([{name:nm+'.dxf',data:r.dxf}]);else go(nm+'.zip',zipMany([{name:nm+'.dxf',data:r.dxf}]))};
  $('exSheet').disabled=false;$('exSheets').disabled=false;
  $('exSheet').onclick=()=>{const t=curTu();if(t<0){$('exNote').textContent='Chọn một tủ (bấm ↗ ở danh sách tủ hoặc bấm vào một trụ) rồi xuất.';return}window.__exportSheet(t)};
@@ -2666,7 +2641,7 @@ window.__T={setTool,toolClick,sx,sy,get N(){return N},P:()=>P,PX:()=>PX,PY:()=>P
 })();
 </script>
 <script>
-(function(){const V='1794760451';
+(function(){const V='1794828375';
  async function raw(n){let r=null;try{r=await fetch(n+'.gz?v='+V)}catch(e){}
   if(r&&r.ok){const u=new Uint8Array(await r.arrayBuffer());if(u[0]===0x1f&&u[1]===0x8b){if(!('DecompressionStream' in window))throw new Error('nogz');return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}return new TextDecoder().decode(u)}
   throw new Error('miss '+n)}
