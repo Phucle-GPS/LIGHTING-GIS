@@ -2354,7 +2354,6 @@ async function batchRun(ts,fm,fq){if(BXJ){cmdMsg('Đang xuất – chờ xong ho
    if(fm==='tu'){const r=oneDxf([t]);if(r){files.push({name:dir+nm+(r.n>1?` (${r.n} ban)`:'')+'.dxf',data:r.dxf});nb+=r.n;ntu++}}
    else{const cs=sheetCenters(t);if(cs.length)ntu++;cs.forEach((c,j)=>{const r=sheetDxf(t,j+1,cs.length,c);if(r){files.push({name:dir+(cs.length>1?nm+'/':'')+fileTu(t,j+1,cs.length),data:r.dxf});nb++}})}}catch(e){errs.push(D.tu[t])}}
  const stopped=BXJ.stop;if(!files.length){el.textContent=stopped?'Đã dừng – chưa có file nào.':'Không có tủ nào xuất được bản vẽ.';BXJ=null;return}
- files.push({name:'DANH_SACH_BAN_VE.csv',data:'﻿STT,Tep\r\n'+files.map((f,i)=>`${i+1},"${f.name}"`).join('\r\n')});
  show(`Đang nén ${files.length} file…`);const blob=await zipDeflate(files,n=>{if(n%20===0)show(`Đang nén ${n}/${files.length} file…`)});
  const nmz=`BanVe_TL1000_${ts.length===1?fnSafe(D.tu[ts[0]]):ts.length+'_tu'}_${new Date().toISOString().slice(0,10)}.zip`;
  el.textContent=`${stopped?'Đã dừng giữa chừng – ':''}Đã xuất ${nb} bản vẽ của ${ntu} tủ vào ${nmz} (${(blob.size/1048576).toFixed(1)} MB, ${Math.round((Date.now()-t0)/1000)} giây)${errs.length?' · lỗi: '+errs.slice(0,5).join(', '):''}.`;
@@ -2641,7 +2640,7 @@ window.__T={setTool,toolClick,sx,sy,get N(){return N},P:()=>P,PX:()=>PX,PY:()=>P
 })();
 </script>
 <script>
-(function(){const V='1794828375';
+(function(){const V='1794882801';
  async function raw(n){let r=null;try{r=await fetch(n+'.gz?v='+V)}catch(e){}
   if(r&&r.ok){const u=new Uint8Array(await r.arrayBuffer());if(u[0]===0x1f&&u[1]===0x8b){if(!('DecompressionStream' in window))throw new Error('nogz');return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}return new TextDecoder().decode(u)}
   throw new Error('miss '+n)}
