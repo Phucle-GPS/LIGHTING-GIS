@@ -89,6 +89,8 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 
 ## Định vị trên bản đồ (vị trí của tôi)
 - Mở app (sau khi đăng nhập) app tự lấy GPS và đưa bản đồ về chỗ người dùng đang đứng: chỉ hiện chấm xanh và vòng sai số, không bật tủ, trụ, đèn nào, không mở danh sách tủ.
-- Nút ◎ dưới nút +/− (và nút "Định vị" ở bảng trái): quay về vị trí của tôi và bám theo khi di chuyển; kéo bản đồ thì thôi bám; bấm ◎ khi đang bám để bật la bàn (điện thoại).
+- Nút "Định vị" ở bảng trái là nút bật/tắt: bấm để bật (nút chuyển màu xanh, chữ "Tắt định vị"), bấm lần nữa để tắt.
+- Nút ◎ dưới nút +/−: quay về vị trí của tôi và bám theo khi di chuyển; kéo bản đồ thì thôi bám; bấm ◎ khi đang bám để bật la bàn (điện thoại).
+- Điểm định vị có hiệu ứng radar: tia quét xoay tròn và sóng lan tỏa (vẽ trên lớp riêng, không làm nặng bản đồ; tự tắt khi máy bật chế độ giảm chuyển động).
 - Thẻ góc dưới trái: "Vị trí của tôi", tọa độ, sai số. Bấm × để tắt định vị.
 - Cần mở app qua https (GitHub Pages) và cho phép quyền "Vị trí" trên trình duyệt.
