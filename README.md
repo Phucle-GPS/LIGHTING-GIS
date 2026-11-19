@@ -88,7 +88,7 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 - Lệnh mới: SPL, PO (điểm – thêm trụ dùng TRU), J, S (STRETCH – lưu dùng Ctrl+S), AL, DAN, DCO, ST, T, B, I, BE, LAYISO, LAYON, AA, Ctrl+P.
 
 ## Định vị trên bản đồ (vị trí của tôi)
-- Mở app (sau khi đăng nhập) app tự lấy GPS, đưa bản đồ về chỗ người dùng đang đứng và hiện chấm xanh kèm vòng sai số.
-- Nút ◎ dưới nút +/− trên bản đồ: bấm để định vị và bám theo vị trí; kéo bản đồ thì thôi bám (chấm xanh vẫn cập nhật); bấm ◎ khi đang bám để bật la bàn (hình nón chỉ hướng nhìn, trên điện thoại).
-- Thẻ góc dưới trái: tên đường, phường, trụ gần nhất và khoảng cách, tủ, tọa độ, sai số. Bấm × để tắt định vị.
+- Mở app (sau khi đăng nhập) app tự lấy GPS và đưa bản đồ về chỗ người dùng đang đứng: chỉ hiện chấm xanh và vòng sai số, không bật tủ, trụ, đèn nào, không mở danh sách tủ.
+- Nút ◎ dưới nút +/− (và nút "Định vị" ở bảng trái): quay về vị trí của tôi và bám theo khi di chuyển; kéo bản đồ thì thôi bám; bấm ◎ khi đang bám để bật la bàn (điện thoại).
+- Thẻ góc dưới trái: "Vị trí của tôi", tọa độ, sai số. Bấm × để tắt định vị.
 - Cần mở app qua https (GitHub Pages) và cho phép quyền "Vị trí" trên trình duyệt.

@@ -2652,19 +2652,17 @@ try{LOC.auto=localStorage.getItem('lg_autoloc')!=='0'}catch(e){}
 function locState(){const b=$('zme');if(!b)return;b.classList.toggle('on',LOC.on&&!!ME&&ME.src==='GPS');b.classList.toggle('fol',LOC.follow);b.classList.toggle('wait',LOC.on&&!(ME&&ME.src==='GPS'));b.title=LOC.follow?'Đang bám theo vị trí – bấm để bật la bàn':'Vị trí của tôi'}
 function meWhere(){if(!ME)return null;let bi=-1,bd=1e18;for(let i=0;i<N;i++){if(DEL[i])continue;const d=(PX[i]-ME.x)**2+(PY[i]-ME.y)**2;if(d<bd){bd=d;bi=i}}
  if(bi<0)return null;return{i:bi,d:Math.sqrt(bd),road:D.duong[P[bi][7]]||'',ward:WARDS[PW[bi]]||'',tu:D.tu[PT[bi]]||''}}
-function meCard(){const c=$('meCard');if(!c)return;if(!ME||!LOC.on){c.hidden=true;return}const w=meWhere();const ll=GEO.toWGS(ME.x+D.X0,ME.y+D.Y0);
- const far=w&&w.d>1500;
- c.innerHTML=`<span class="medot" aria-hidden="true"></span><div><b>${w&&!far?esc(w.road||'Vị trí của bạn'):'Vị trí của bạn'}</b><small>${w&&!far?`${w.ward&&!w.ward.startsWith('(')?'P. '+esc(w.ward)+' · ':''}trụ gần nhất ${esc(P[w.i][0])} – ${fmt(w.d,0)} m · tủ ${esc(w.tu)}`:far?'Ngoài khu vực có dữ liệu chiếu sáng':''}</small><small>${ll.map(v=>v.toFixed(6)).join(', ')}${ME.acc?' · ±'+fmt(ME.acc,0)+' m':''}${LOC.follow?' · đang bám theo':''}</small></div><button type="button" class="mex" aria-label="Tắt định vị">×</button>`;
+function meCard(){const c=$('meCard');if(!c)return;if(!ME||!LOC.on){c.hidden=true;return}const ll=GEO.toWGS(ME.x+D.X0,ME.y+D.Y0);
+  c.innerHTML=`<span class="medot" aria-hidden="true"></span><div><b>Vị trí của tôi</b><small>${ll.map(v=>v.toFixed(6)).join(', ')}${ME.acc?' · ±'+fmt(ME.acc,0)+' m':''}${LOC.follow?' · đang bám theo':''}</small></div><button type="button" class="mex" aria-label="Tắt định vị">×</button>`;
  c.hidden=false;c.querySelector('.mex').onclick=locOff}
 function locFix(p){const c=p.coords;const[X,Y]=GEO.toVN(c.latitude,c.longitude);const x=X-D.X0,y=Y-D.Y0;const first=!ME||ME.src!=='GPS';
  ME={x,y,acc:c.accuracy,src:'GPS',at:new Date()};if(c.heading!=null&&!isNaN(c.heading)&&(c.speed||0)>0.7)LOC.head=c.heading;
- const mv=!LOC.last||Math.hypot(x-LOC.last[0],y-LOC.last[1])>25;if(first||mv){LOC.last=[x,y];nearTu()}
- if(first||LOC.follow){cx=x;cy=y;if(first&&k<2.5)k=2.5}LOC.err='';locState();meCard();draw()}
+  if(first||LOC.follow){cx=x;cy=y;if(first&&k<2.5)k=2.5}LOC.err='';locState();meCard();draw()}
 function locErr(e){LOC.err=e&&e.message||'';if(LOC.wid!=null){navigator.geolocation.clearWatch(LOC.wid);LOC.wid=null}LOC.on=false;LOC.follow=false;locState();
  if(e&&e.code===1)cmdMsg('Chưa cho phép định vị – vào cài đặt trình duyệt cho phép "Vị trí" với trang này rồi bấm ◎');else cmdMsg('Không lấy được vị trí GPS – thử lại ngoài trời hoặc bật GPS trên điện thoại')}
 function locStart(silent){if(!navigator.geolocation){if(!silent)gpsErr();return}if(LOC.wid!=null)return;LOC.on=true;locState();
  LOC.wid=navigator.geolocation.watchPosition(locFix,e=>{if(silent&&e.code!==1&&!ME){}locErr(e)},{enableHighAccuracy:true,maximumAge:3000,timeout:20000})}
-function locOff(){if(LOC.wid!=null){navigator.geolocation.clearWatch(LOC.wid);LOC.wid=null}LOC.on=false;LOC.follow=false;LOC.head=null;cmpOff();if(ME&&ME.src==='GPS'){ME=null;NEAR.clear();$('locOut').hidden=true;renderTu()}locState();meCard();draw()}
+function locOff(){if(LOC.wid!=null){navigator.geolocation.clearWatch(LOC.wid);LOC.wid=null}LOC.on=false;LOC.follow=false;LOC.head=null;cmpOff();if(ME&&ME.src==='GPS')ME=nulllocState();meCard();draw()}
 function cmp(e){let h=null;if(e.webkitCompassHeading!=null)h=e.webkitCompassHeading;else if(e.absolute&&e.alpha!=null)h=360-e.alpha;if(h==null)return;h=(h+((screen.orientation&&screen.orientation.angle)||0)+360)%360;if(LOC.cmp==null||Math.abs(((h-LOC.cmp+540)%360)-180)>2){LOC.cmp=h;draw()}}
 function cmpOn(){const go=()=>{window.addEventListener('deviceorientationabsolute',cmp,true);window.addEventListener('deviceorientation',cmp,true);LOC.cmpOn=true;cmdMsg('Đã bật la bàn – hình nón xanh chỉ hướng bạn đang nhìn')};
  if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission)DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted')go()}).catch(()=>{});else go()}
@@ -2683,13 +2681,13 @@ function locAuto(){if(!LOC.auto||LOC.on||!window.isSecureContext||!navigator.geo
  const go=()=>locStart(true);if(navigator.permissions&&navigator.permissions.query)navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state!=='denied')go()}).catch(go);else go()}
 {const _h=hideLogin;hideLogin=function(){const r=_h.apply(this,arguments);setTimeout(locAuto,300);return r}}
 setTimeout(()=>{if($('login').hidden)locAuto()},800);
-$('bLoc').onclick=()=>{LOC.follow=true;if(ME&&ME.src==='GPS'){cx=ME.x;cy=ME.y;if(k<2.5)k=2.5;nearTu();draw()}else{$('locOut').hidden=false;$('locOut').innerHTML='<p class="note">Đang lấy vị trí GPS…</p>'}locStart(false)};
+$('bLoc').onclick=()=>{$('locOut').hidden=true;LOC.follow=true;if(ME&&ME.src==='GPS'){cx=ME.x;cy=ME.y;if(k<2.5)k=2.5;locState();meCard();draw()}else cmdMsg('Đang lấy vị trí GPS…');locStart(false)};
 window.__LOC=LOC;
 window.__T={setTool,toolClick,sx,sy,get N(){return N},P:()=>P,PX:()=>PX,PY:()=>PY,ED:()=>ED,dirty:dirtyList};
 })();
 </script>
 <script>
-(function(){const V='1795084251';
+(function(){const V='1795087186';
  async function raw(n){let r=null;try{r=await fetch(n+'.gz?v='+V)}catch(e){}
   if(r&&r.ok){const u=new Uint8Array(await r.arrayBuffer());if(u[0]===0x1f&&u[1]===0x8b){if(!('DecompressionStream' in window))throw new Error('nogz');return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}return new TextDecoder().decode(u)}
   throw new Error('miss '+n)}
