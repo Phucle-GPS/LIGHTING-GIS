@@ -26,7 +26,10 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 |---|---|
 | index.html | App (bản đồ + đăng nhập) |
 | config.js | Link máy chủ Apps Script |
-| base.json | Bản đồ nền |
+| base.json | Bản đồ nền (bản dự phòng, không nén) |
+| pack.gz | Dữ liệu trụ, cáp, tủ, ký hiệu, khung (nén gzip) |
+| base.gz | Bản đồ nền nén gzip – app dùng file này |
+| sw.js | Bộ nhớ đệm offline (chỉ lưu bản nén) |
 | app.html | Chuyển hướng link cũ về app |
 | sw.js, manifest.json, icon-*.png | Cài như ứng dụng trên điện thoại |
 
@@ -54,3 +57,38 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 - Kích thước & chữ: D, DLI, DAL, DRA, DDI, MT, DT
 - Phím: Ctrl+O/S/Z/Y, F1, F2, F3, F7, F8, F9, F10, ESC
 - Đổi tên lệnh cũ: thêm trụ = TRU (hoặc PO); dải trụ = DTR; cáp = CN/CG
+
+## Bản nhẹ cho điện thoại
+- `index.html` chỉ còn ~330 KB; dữ liệu nằm trong `pack.gz` (~0,8 MB) và `base.gz` (~2,4 MB).
+- Bộ nhớ đệm trên máy chỉ giữ bản nén (~3,5 MB thay vì ~10 MB trước đây); bản cũ tự xóa khi mở app phiên bản mới.
+
+## Chọn đối tượng kiểu CAD
+- Bấm chỗ trống → bấm góc đối diện: kéo sang phải = chọn trọn trong khung, sang trái = chọn giao. Esc hủy. Shift + bấm để cộng thêm.
+- Nhiều đối tượng chồng nhau: bấm lại đúng chỗ để chọn lần lượt.
+
+## Xuất bản vẽ tủ lớn
+- Tủ vừa 1 khung A3 tỉ lệ 1/1000: xuất bản vẽ có khung như trước.
+- Tủ lớn hơn khung: không tách bản – xuất 1 bản vẽ tổng thể tỉ lệ 1/1000 (đúng tọa độ VN-2000), khung tên đặt bên phải để người dùng sao chép và tự cắt.
+
+## Sửa đối tượng vẽ như AutoCAD (grip)
+- Bấm chọn nét vẽ → hiện ô vuông xanh (grip). Kéo ô, hoặc bấm ô (ô đỏ) rồi bấm điểm mới: kéo dãn đầu mút/đỉnh, dời (ô giữa/tâm), đổi bán kính (ô góc phần tư).
+- Nhiều nét chung một điểm được kéo cùng nhau. Esc hủy, Ctrl+Z hoàn tác. Nhấp đúp nét vẽ → bảng thuộc tính.
+- Enter / Space: đang có lệnh → kết thúc; không có lệnh → lặp lại lệnh vừa dùng.
+
+## Lệnh con như AutoCAD
+- Các lựa chọn trong [ ] hiện thành nút bấm phía trên dòng lệnh (hoặc gõ chữ trong ngoặc).
+- PL: A cung (A góc · CE tâm · R bán kính · S điểm thứ 2 · D hướng · L về đoạn thẳng · CL khép bằng cung), L dài, W rộng, H nửa rộng, C khép, U hoàn tác.
+- REC: F bo góc, W rộng nét, R xoay, D kích thước. C: 2P, 3P, D đường kính.
+- Khi lệnh sửa hỏi chọn đối tượng: ALL tất cả, P lần chọn trước, L vừa vẽ, W cửa sổ, C giao, R bớt, A thêm.
+- Vẽ/chép xong, đối tượng mới được chọn sẵn (có grip) để M, CO, RO, SC… ngay không cần chọn lại.
+
+## Bảng lệnh AutoCAD 2D (F1)
+- F1 mở bảng lệnh theo nhóm (Vẽ, Hiệu chỉnh, Kích thước & chữ, Lớp & khối, Đo đạc, Chiếu sáng, Phím) có ô tìm kiếm; bấm dòng để chạy lệnh.
+- Gõ vài chữ ở dòng lệnh sẽ hiện gợi ý (↑ ↓ chọn rồi Enter, hoặc Tab để điền).
+- Lệnh mới: SPL, PO (điểm – thêm trụ dùng TRU), J, S (STRETCH – lưu dùng Ctrl+S), AL, DAN, DCO, ST, T, B, I, BE, LAYISO, LAYON, AA, Ctrl+P.
+
+## Định vị trên bản đồ (vị trí của tôi)
+- Mở app (sau khi đăng nhập) app tự lấy GPS, đưa bản đồ về chỗ người dùng đang đứng và hiện chấm xanh kèm vòng sai số.
+- Nút ◎ dưới nút +/− trên bản đồ: bấm để định vị và bám theo vị trí; kéo bản đồ thì thôi bám (chấm xanh vẫn cập nhật); bấm ◎ khi đang bám để bật la bàn (hình nón chỉ hướng nhìn, trên điện thoại).
+- Thẻ góc dưới trái: tên đường, phường, trụ gần nhất và khoảng cách, tủ, tọa độ, sai số. Bấm × để tắt định vị.
+- Cần mở app qua https (GitHub Pages) và cho phép quyền "Vị trí" trên trình duyệt.
