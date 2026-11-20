@@ -94,3 +94,10 @@ Trong app (đăng nhập quản trị → mục *Quản lý tài khoản*) hoặ
 - Điểm định vị có hiệu ứng radar: tia quét xoay tròn và sóng lan tỏa (vẽ trên lớp riêng, không làm nặng bản đồ; tự tắt khi máy bật chế độ giảm chuyển động).
 - Thẻ góc dưới trái: "Vị trí của tôi", tọa độ, sai số. Bấm × để tắt định vị.
 - Cần mở app qua https (GitHub Pages) và cho phép quyền "Vị trí" trên trình duyệt.
+
+## Nhập tọa độ (mọi định dạng) – chỉ chủ app hoặc tài khoản được duyệt
+- Mục **Nhập tọa độ** ở bảng trái chỉ hiện với chủ app, hoặc tài khoản được chủ app tick ô **Nhập tọa độ** trong Quản lý tài khoản (tick ngay trên từng dòng tài khoản, hoặc ô "Cho phép nhập tọa độ" khi Sửa). Bỏ tick là thu quyền ngay.
+- Đọc: Excel (.xlsx/.xls/.ods), CSV/TXT (dấu , ; tab | hoặc khoảng trắng, số thập phân dấu phẩy), KML/KMZ, GeoJSON, GPX, DXF (POINT, INSERT kèm thuộc tính tên, CIRCLE), hoặc dán chữ: `10.79225, 106.70396`, độ-phút-giây `10°47'32"N 106°42'14"E`, VN2000 `604225.9 1193577.7`, link Google Maps.
+- Tự nhận hệ WGS84 hay VN2000 (TP.HCM, KTT 105°45'), tự nhận cột Tên / Vĩ độ / Kinh độ / X / Y / Tủ / Loại đèn; có thể chọn tay hệ tọa độ, tủ gán, loại trụ, loại đèn. Xem trước dấu + cam trên bản đồ rồi mới thêm; bỏ qua điểm trùng trụ có sẵn; Ctrl+Z hoàn tác cả lần nhập.
+- Máy chủ (Code.gs) kiểm tra lại: tài khoản chưa được tick không lưu được trụ nhập từ file, dù có sửa app.
+- Cập nhật Code.gs: Apps Script → dán đè Code.gs → Triển khai → Quản lý triển khai → Chỉnh sửa → Phiên bản mới → Triển khai (link /exec giữ nguyên). Sheet TaiKhoan tự thêm cột L "Nhập tọa độ" (Có/Không).

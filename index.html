@@ -109,6 +109,9 @@ select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8p
 .mecard .medot{flex:none;width:14px;height:14px;margin-top:3px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2),0 0 0 6px rgba(26,115,232,.18)}
 .mecard .mex{flex:none;border:0;background:none;font-size:18px;line-height:1;color:var(--mut);cursor:pointer;padding:0 2px}
 #bLoc.lon{background:#1a73e8;border-color:#1a73e8;color:#fff}#bLoc.lon .pin{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+.impg{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;margin:6px 0}.impg label{display:flex;flex-direction:column;gap:3px;font-size:12px;min-width:0}.impg select{width:100%}
+.impk{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:1px 6px;border:1px solid var(--line);border-radius:6px;cursor:pointer}.impk input{margin:0}
+#impSec code{font-size:11px}
 </style>
 <style>
 .cadbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px max(8px,env(safe-area-inset-right,0px)) 6px 8px;background:var(--panel);border-bottom:1px solid var(--line)}
@@ -495,7 +498,7 @@ async function remotePull(){if(!REMOTE||!TOK)return;try{const r=await api('pull'
    let v;try{v=JSON.parse(it.json)}catch(e){continue}const js=JSON.stringify({p:v.p||{},s:v.s||{},np:v.np||{},ns:v.ns||{},hn:v.hn||{},...(v.cab?{cab:v.cab}:{}),...(v.auto?{auto:1}:{}),...(v.dr?{dr:v.dr}:{})});
    if(JSON.stringify(ED[t])!==SAVED[t])continue;if(js!==SAVED[t]){ED[t]=JSON.parse(js);SAVED[t]=js;ch=true}}
   RLAST=r.now;if(ch){rebuild();updDirty();draw()}if(!saving)setStatus(`Bản đồ chung: ${r.total} tủ đã có chỉnh sửa`);
-  if(r.me&&ACC.me&&!ACC.owner){const a=r.me,m=ACC.me;if(a.role!==m.role||a.own!==m.own||String(a.q)!==String(m.q)||a.name!==m.name){ACC.me=a;applyAcc()}}}
+  if(r.me&&ACC.me&&!ACC.owner){const a=r.me,m=ACC.me;if(a.role!==m.role||a.own!==m.own||String(a.q)!==String(m.q)||a.name!==m.name||!!a.imp!==!!m.imp){ACC.me=a;applyAcc()}}}
  catch(e){if(e.code==='auth')remoteAuthFail(e.message);else setStatus('Mất kết nối máy chủ – sẽ thử lại')}}
 function remoteStart(){RLAST='';ED.forEach((e,t)=>{const b=JSON.stringify(blank());if(JSON.stringify(e)===SAVED[t]){ED[t]=blank();SAVED[t]=b}});rebuild();updDirty();draw();setStatus('Đang tải dữ liệu chung…');remotePull();clearInterval(RPT);RPT=setInterval(remotePull,60000)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')remotePull()});
@@ -1368,14 +1371,15 @@ function renderAccAdmin(){const el=$('accAdmin');if(!el)return;const L=ACC.list.
   <label>Quyền<select name="role"><option value="view" ${ed?.role==='view'?'selected':''}>Chỉ xem</option><option value="edit" ${!ed||ed.role==='edit'?'selected':''}>Chỉnh sửa</option><option value="admin" ${ed?.role==='admin'?'selected':''}>Quản trị (sửa mọi tủ)</option></select></label>
   <div class="full"><span class="note">Quận được xem</span><div class="qchk">${qbox(ed?.q||[])}</div></div>
   <label class="full chk"><input type="checkbox" name="own" ${ed?.own?'checked':''}> Chỉ được sửa tủ mình phụ trách (theo người quản lý trong file TĐK)</label>
+  <label class="full chk"><input type="checkbox" name="imp" ${ed?.imp?'checked':''}> Cho phép nhập tọa độ từ file (mặc định chỉ chủ app)</label>
   <div class="row full"><button class="btn pri" type="submit">${ed?'Lưu thay đổi':'Thêm tài khoản'}</button>${ed?'<button class="btn" type="button" id="accCancel">Hủy</button>':''}<span class="note" id="accMsg"></span></div>
  </form>
  <h3 class="palh">Danh sách tài khoản (${L.length})</h3><div class="accl">${L.map(a=>`<div class="acci ${a.active===false?'off':''}"><div class="nm"><b>${esc(a.name)}</b><small>${esc(a.user)}</small></div><div class="act"><button class="btn sm" data-ae="${esc(a.user)}">Sửa</button><button class="btn sm" data-al="${esc(a.user)}">${a.active===false?'Mở':'Khóa'}</button><button class="btn sm danger" data-ad="${esc(a.user)}">Xóa</button></div>
- <div class="mt"><span class="tagr ${a.role}">${ROLEN[a.role]||a.role}</span><span>${(a.q||[]).map(q=>DIST.names[q]).join(', ')||'Tất cả quận'}</span>${a.own?'<span>· chỉ sửa tủ phụ trách</span>':''}${a.active===false?'<span class="warn">· đã khóa</span>':''}<span>· ${last[a.user]?'đăng nhập '+new Date(last[a.user]).toLocaleString('vi-VN'):'chưa đăng nhập'}</span></div></div>`).join('')||'<span class="note">Chưa có tài khoản.</span>'}</div>
+ <div class="mt"><span class="tagr ${a.role}">${ROLEN[a.role]||a.role}</span><span>${(a.q||[]).map(q=>DIST.names[q]).join(', ')||'Tất cả quận'}</span>${a.own?'<span>· chỉ sửa tủ phụ trách</span>':''}${a.active===false?'<span class="warn">· đã khóa</span>':''}<label class="impk" title="Tick để cho phép tài khoản này nhập tọa độ"><input type="checkbox" data-ai="${esc(a.user)}" ${a.imp?'checked':''}> Nhập tọa độ</label><span>· ${last[a.user]?'đăng nhập '+new Date(last[a.user]).toLocaleString('vi-VN'):'chưa đăng nhập'}</span></div></div>`).join('')||'<span class="note">Chưa có tài khoản.</span>'}</div>
  <h3 class="palh">Nhật ký gần đây</h3><div class="logl">${ACC.log.slice().sort((a,b)=>a.at<b.at?1:-1).slice(0,40).map(g=>`<div><small>${new Date(g.at).toLocaleString('vi-VN')}</small><span><b>${esc(g.name||g.u)}</b> ${g.kind==='login'?'đăng nhập':g.kind==='logout'?'đăng xuất':g.kind==='save'?'cập nhật tủ '+esc(g.tu||''):g.kind==='account'?'tài khoản: '+esc(g.tu||''):esc(g.kind)}</span></div>`).join('')||'<span class="note">Chưa có hoạt động.</span>'}</div>`;
  const F=$('accF');F.onsubmit=async e=>{e.preventDefault();const fd=new FormData(F);const user=String(fd.get('user')).trim().toLowerCase();const old=ACC.list.find(x=>x.user===user);
   if(!accEdit&&old){$('accMsg').textContent='Tên đăng nhập đã có.';return}
-  const doc={...(old||{}),name:String(fd.get('name')).trim(),user,role:fd.get('role'),q:fd.getAll('aq').map(Number),own:!!fd.get('own'),active:old?old.active!==false:true,at:new Date().toISOString()};
+  const doc={...(old||{}),name:String(fd.get('name')).trim(),user,role:fd.get('role'),q:fd.getAll('aq').map(Number),own:!!fd.get('own'),imp:!!fd.get('imp'),active:old?old.active!==false:true,at:new Date().toISOString()};
   const pw=String(fd.get('pw')||'');delete doc.id;
   if(REMOTE){$('accMsg').textContent='Đang lưu…';try{delete doc.salt;delete doc.hash;await api('accSave',{acc:doc,pw,isNew:!accEdit});accEdit=null;await accRefresh();$('accMsg').textContent='Đã lưu.'}catch(err){$('accMsg').textContent='Không lưu được: '+err.message}return}
   if(pw){doc.salt=rnd();doc.hash=await sha(doc.salt+pw)}
@@ -1383,6 +1387,8 @@ function renderAccAdmin(){const el=$('accAdmin');if(!el)return;const L=ACC.list.
  if(REMOTE){if($('accNt'))$('accNt').onchange=async e=>{try{await api('setNotify',{on:e.target.checked});ACC.notify=e.target.checked}catch(x){cmdMsg('Không đổi được: '+x.message)}};if($('accRf'))$('accRf').onclick=()=>accRefresh()}
  if($('accCancel'))$('accCancel').onclick=()=>{accEdit=null;renderAccAdmin()};
  for(const b of el.querySelectorAll('[data-ae]'))b.onclick=()=>{accEdit=ACC.list.find(x=>x.user===b.dataset.ae);renderAccAdmin();$('accF').scrollIntoView({block:'nearest'})};
+ for(const b of el.querySelectorAll('[data-ai]'))b.onchange=async()=>{const a=ACC.list.find(x=>x.user===b.dataset.ai);if(!a)return;const on=b.checked;b.disabled=true;const d={...a,imp:on};delete d.id;
+  try{if(REMOTE){delete d.salt;delete d.hash;delete d.last;await api('accSave',{acc:d,pw:'',isNew:false});a.imp=on;cmdMsg((on?'Đã cho phép ':'Đã thu quyền ')+'nhập tọa độ: '+(a.name||a.user))}else{await ACC.db.doc('accounts/'+a.user).set(d);a.imp=on}}catch(e){b.checked=!on;cmdMsg('Không đổi được quyền: '+(e.message||e))}b.disabled=false};
  for(const b of el.querySelectorAll('[data-al]'))b.onclick=async()=>{const a=ACC.list.find(x=>x.user===b.dataset.al);if(REMOTE){try{await api('accActive',{user:a.user,active:a.active===false});await accRefresh()}catch(e){cmdMsg('Không đổi được trạng thái: '+e.message)}return}const d={...a,active:a.active===false};delete d.id;try{await ACC.db.doc('accounts/'+a.user).set(d)}catch(e){cmdMsg('Không đổi được trạng thái')}};
  for(const b of el.querySelectorAll('[data-ad]'))b.onclick=async()=>{if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent='Bấm lần nữa để xóa';return}if(REMOTE){try{await api('accDelete',{user:b.dataset.ad});await accRefresh()}catch(e){cmdMsg('Không xóa được: '+e.message)}return}try{await ACC.db.doc('accounts/'+b.dataset.ad).delete()}catch(e){cmdMsg('Không xóa được')}}}
 // ---- chế độ GitHub + Apps Script
@@ -2709,12 +2715,172 @@ function locAuto(){if(!LOC.auto||LOC.on||!window.isSecureContext||!navigator.geo
 {const _h=hideLogin;hideLogin=function(){const r=_h.apply(this,arguments);setTimeout(locAuto,300);return r}}
 setTimeout(()=>{if($('login').hidden)locAuto()},800);
 $('bLoc').onclick=()=>{$('locOut').hidden=true;if(LOC.on){locOff();cmdMsg('Đã tắt định vị');return}LOC.follow=true;cmdMsg('Đang lấy vị trí GPS…');locStart(false)};
+// ---------- NHẬP TỌA ĐỘ (mọi định dạng) – chỉ chủ app, hoặc tài khoản được chủ app tick "Cho phép nhập tọa độ"
+const IMP={pts:[],src:'',crs:'auto',sheets:null,map:null,res:null};
+function canImp(){if(ACC.owner)return true;if(!ACC.me)return !REMOTE&&!ACC.db;return ACC.me.imp===true}
+(function(){const ref=$('accSec');if(!ref)return;const d=document.createElement('details');d.className='sec fold';d.dataset.k='nhaptoado';d.id='impSec';d.hidden=true;
+ d.innerHTML=`<summary><h2>Nhập tọa độ</h2><span class="fhint">Mọi định dạng</span></summary><div class="foldin" id="impBox"></div>`;ref.parentNode.insertBefore(d,ref);impUI()})();
+function impGate(){const s=$('impSec');if(!s)return;const ok=canImp();s.hidden=!ok;if(!ok){impClear();s.open=false}}
+function impUI(){const el=$('impBox');if(!el)return;
+ const kinds=KIND.map((n,k)=>[k,n]).filter(([k])=>!ISCAB(k));
+ el.innerHTML=`<p class="note">Đọc tọa độ từ <b>Excel (.xlsx/.xls/.ods), CSV/TXT, KML/KMZ, GeoJSON, GPX, DXF</b> hoặc dán chữ trực tiếp (vd <code>10.79225, 106.70396</code>, <code>10°47'32"N 106°42'14"E</code>, <code>604225.9 1193577.7</code>, link Google Maps). Tự nhận WGS84 (vĩ độ/kinh độ) hay VN2000 (TP.HCM, KTT 105°45').</p>
+ <div class="row"><label class="btn" style="display:inline-flex;align-items:center">Chọn file tọa độ…<input type="file" id="impFile" accept=".xlsx,.xls,.ods,.csv,.txt,.tsv,.kml,.kmz,.geojson,.json,.gpx,.dxf" hidden></label></div>
+ <textarea id="impTxt" rows="3" placeholder="…hoặc dán tọa độ vào đây, mỗi điểm 1 dòng (có thể kèm tên)" style="width:100%;margin-top:6px;font:12px ui-monospace,monospace;resize:vertical"></textarea>
+ <div class="row"><button class="btn" id="impParse" type="button">Đọc tọa độ đã dán</button></div>
+ <div id="impOut" class="ltimp" hidden></div>
+ <div id="impOpt" hidden>
+  <div class="impg"><label>Hệ tọa độ<select id="impCrs"><option value="auto">Tự nhận</option><option value="wgs">WGS84 – vĩ độ, kinh độ</option><option value="vn">VN2000 – TP.HCM (X, Y mét)</option></select></label>
+  <label>Gán vào tủ<select id="impTu"><option value="auto">Tủ gần nhất (tự động)</option></select></label>
+  <label>Loại trụ<select id="impKind">${kinds.map(([k,n])=>`<option value="${k}" ${k===PAL.k?'selected':''}>${n}</option>`).join('')}</select></label>
+  <label>Đèn<select id="impLt">${Object.keys(LTN).map(t=>`<option value="${t}" ${t==='NONE'?'selected':''}>${LTN[t]}</option>`).join('')}</select></label></div>
+  <div id="impMap"></div>
+  <label class="chk"><input type="checkbox" id="impSkip" checked> Bỏ qua điểm trùng trụ có sẵn (cách dưới 1 m)</label>
+  <div class="row"><button class="btn pri" id="impGo" type="button">Thêm thành trụ mới</button><button class="btn" id="impZoom" type="button">Xem trên bản đồ</button><button class="btn" id="impCancel" type="button">Hủy</button></div>
+ </div>`;
+ $('impFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)impLoad(f)};
+ $('impParse').onclick=()=>{IMP.map=null;const t=$('impTxt').value;if(!t.trim()){cmdMsg('Dán tọa độ vào ô trước');return}impSet(impText(t),'Dữ liệu dán')};
+ $('impCrs').onchange=()=>{IMP.crs=$('impCrs').value;impApply()};
+ $('impGo').onclick=impCommit;$('impZoom').onclick=impZoom;$('impCancel').onclick=impClear}
+function impTuOpts(){const s=$('impTu');if(!s)return;const cur=s.value;const L=[];for(let t=0;t<nT;t++)if(tuAllowed(t)&&(typeof tuEditable!=='function'||tuEditable(t)))L.push(t);L.sort((a,b)=>D.tu[a].localeCompare(D.tu[b],'vi'));
+ s.innerHTML='<option value="auto">Tủ gần nhất (tự động)</option>'+L.map(t=>`<option value="${t}">${esc(D.tu[t])}</option>`).join('');if([...s.options].some(o=>o.value===cur))s.value=cur}
+// ---- đọc số / tọa độ ở mọi dạng viết
+function impNum(v){if(v==null)return NaN;if(typeof v==='number')return v;let s=String(v).trim().replace(/\s+/g,'');if(!s)return NaN;
+ if(/^-?\d{1,3}(\.\d{3})+,\d+$/.test(s))s=s.replace(/\./g,'').replace(',','.');else if(/^-?\d{1,3}(,\d{3})+\.\d+$/.test(s))s=s.replace(/,/g,'');else if(/^-?\d+,\d+$/.test(s))s=s.replace(',','.');
+ return /^[-+]?\d*\.?\d+(e[-+]?\d+)?$/i.test(s)?+s:NaN}
+function impDMS(s){s=String(s).trim().replace(/,/g,'.');const m=s.match(/^([NSEW])?\s*(-?\d+(?:\.\d+)?)\s*[°º˚d:\s]\s*(?:(\d+(?:\.\d+)?)\s*['′’m:\s]?\s*)?(?:(\d+(?:\.\d+)?)\s*(?:["″”]|''|s)?)?\s*([NSEW])?$/i);
+ if(!m)return NaN;const h=(m[1]||m[5]||'').toUpperCase();let v=Math.abs(+m[2])+(+m[3]||0)/60+(+m[4]||0)/3600;if(+m[2]<0||h==='S'||h==='W')v=-v;return v}
+function impVal(v){const n=impNum(v);if(isFinite(n))return n;return /[°º˚'′"″]|^\s*[NSEW]|[NSEW]\s*$/i.test(String(v))?impDMS(v):NaN}
+// ---- chữ tự do: mỗi dòng 1 điểm
+function impText(t){const out=[];const lines=String(t).replace(/^\uFEFF/,'').split(/\r?\n/);
+ for(const raw of lines){const ln=raw.trim();if(!ln)continue;
+  let m=ln.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||ln.match(/[?&](?:q|ll|query|center)=(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/i)||ln.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if(m){out.push({name:'',a:+m[1],b:+m[2],ll:1});continue}
+  const dm=[...ln.matchAll(/(\d{1,3})\s*[°º˚]\s*(\d{1,2}(?:[.,]\d+)?)?\s*['′’]?\s*(\d{1,2}(?:[.,]\d+)?)?\s*(?:["″”]|'')?\s*([NSEW])?/gi)];
+  if(dm.length>=2){const v=dm.slice(0,2).map(x=>impDMS(x[0]));if(v.every(isFinite)){const nm=ln.replace(dm[0][0],'').replace(dm[1][0],'').replace(/^[\s,;|\t-]+|[\s,;|\t-]+$/g,'');out.push({name:nm,a:v[0],b:v[1],ll:1});continue}}
+  const nums=[...ln.matchAll(/-?\d+(?:[.,]\d+)?/g)].map(x=>({s:x[0],i:x.index,v:+x[0].replace(',','.')}));
+  const pair=impPair(nums.map(x=>x.v));if(!pair)continue;const used=[nums[pair[0]],nums[pair[1]]];
+  let nm=ln;for(const u of used.sort((a,b)=>b.i-a.i))nm=nm.slice(0,u.i)+' '+nm.slice(u.i+u.s.length);nm=nm.replace(/[\s,;|\t]+/g,' ').trim();
+  out.push({name:nm,a:nums[pair[0]].v,b:nums[pair[1]].v})}
+ return out}
+// chọn 2 số liền nhau trông giống tọa độ nhất (vĩ/kinh độ hoặc VN2000)
+function impPair(v){for(let i=0;i+1<v.length;i++){if(impKind(v[i],v[i+1]))return[i,i+1]}return null}
+function impKind(a,b){const ll=(p,q)=>p>=7&&p<=24&&q>=101&&q<=118;const vn=(x,y)=>x>=300000&&x<=900000&&y>=900000&&y<=2700000;
+ if(ll(a,b))return'wgs';if(ll(b,a))return'wgs-sw';if(vn(a,b))return'vn';if(vn(b,a))return'vn-sw';return''}
+// ---- đọc file
+async function impLoad(f){const n=f.name.toLowerCase();IMP.map=null;const out=$('impOut');out.hidden=false;out.innerHTML='<p class="note">Đang đọc '+esc(f.name)+'…</p>';
+ try{let pts;
+  if(/\.(xlsx|xls|ods|xlsm)$/.test(n))pts=impTable(await readTable(f));
+  else if(n.endsWith('.kmz'))pts=impKML(await impUnzipKML(await f.arrayBuffer()));
+  else{const txt=await impTextOf(f);
+   if(n.endsWith('.kml')||/<kml[\s>]/i.test(txt.slice(0,2000)))pts=impKML(txt);
+   else if(n.endsWith('.gpx')||/<gpx[\s>]/i.test(txt.slice(0,2000)))pts=impGPX(txt);
+   else if(n.endsWith('.dxf')||/^\s*0\s*\r?\n\s*SECTION/.test(txt.slice(0,200)))pts=impDXF(txt);
+   else if(/\.(geojson|json)$/.test(n)||/^\s*[{[]/.test(txt))pts=impGeoJSON(JSON.parse(txt));
+   else{const rows=parseCSVany(txt);const tp=impTable([{name:f.name,rows}]);const hasH=!!(IMP.map&&IMP.map.hdr);const xp=impText(txt);if(hasH&&tp.length>=xp.length)pts=tp;else if(xp.length>=tp.length){pts=xp;IMP.map=null}else pts=tp}}
+  impSet(pts,f.name)}catch(e){out.innerHTML=`<p class="warn">Không đọc được file: ${esc(e.message||String(e))}</p>`}}
+async function impTextOf(f){const buf=await f.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);if(t.includes('\uFFFD')){try{t=new TextDecoder('windows-1258').decode(buf)}catch(e){}}return t}
+function splitQ(line,d){const r=[];let f='',q=false;for(let k=0;k<line.length;k++){const c=line[k];if(q){if(c==='"'){if(line[k+1]==='"'){f+='"';k++}else q=false}else f+=c}else if(c==='"'&&f.trim()==='')q=true;else if(c===d){r.push(f);f=''}else f+=c}r.push(f);return r}
+function parseCSVany(t){t=t.replace(/^﻿/,'');const L=t.split(/\r?\n/).filter(x=>x.trim());const S=L.slice(0,40);
+ let best=null;for(const d of[',',';','\t','|']){const c=S.map(l=>splitQ(l,d).length).sort((a,b)=>a-b);const med=c[c.length>>1];if(med>1&&(!best||med>best[1]||(med===best[1]&&d!==',')))best=[d,med]}
+ if(best)return L.map(l=>splitQ(l,best[0]).map(x=>x.trim()));
+ return L.map(l=>l.trim().split(/\s+/))}
+// bảng: tự dò dòng tiêu đề và cột tên / X / Y
+const IMPH={name:/^(t[eê]n|name|m[aã]( tr[uụ])?|id|k[yý] hi[eệ]u|s[oố] hi[eệ]u|label|ma tru|code|stt tr[uụ])/i,
+ lat:/(v[iĩ] ?đ[oộ]|vi do|^lat|latitude)/i,lon:/(kinh ?đ[oộ]|kinh do|^lo?ng|longitude|^lon$)/i,
+ x:/^(x|đ[oô]ng|dong|east|easting|e)\b|t[oọ]a ?đ[oộ] ?x|toa do x|x \(m\)|x_?vn|^x\d?$/i,y:/^(y|b[aắ]c|bac|north|northing|n)\b|t[oọ]a ?đ[oộ] ?y|toa do y|y \(m\)|y_?vn|^y\d?$/i,
+ tu:/(^t[uủ]$|t[uủ] (đi[eề]u khi[eể]n|đk)|tu dieu khien|cabinet)/i,lt:/(lo[aạ]i đ[eè]n|loai den|^đ[eè]n$|lamp)/i,note:/(ghi ch[uú]|note|m[oô] t[aả]|đ[iị]a ch[iỉ])/i};
+function impTable(sheets){let best=[];IMP.sheets=sheets;
+ for(const sh of sheets){const R=sh.rows.filter(r=>r&&r.some(c=>String(c).trim()!==''));if(!R.length)continue;
+  let hi=-1,col=null;
+  for(let i=0;i<Math.min(15,R.length)&&hi<0;i++){const c={};R[i].forEach((v,j)=>{const s=unacc2(v);for(const k in IMPH)if(c[k]==null&&IMPH[k].test(String(v).trim().toLowerCase())||c[k]==null&&IMPH[k].test(s))c[k]=j});
+   if((c.lat!=null&&c.lon!=null)||(c.x!=null&&c.y!=null)){hi=i;col=c}}
+  const body=R.slice(hi+1);
+  if(!col){// không có tiêu đề: tìm 2 cột số liền nhau giống tọa độ
+   const W=Math.max(...body.slice(0,50).map(r=>r.length));let pick=null;
+   for(let j=0;j+1<W&&!pick;j++){let ok=0,tot=0;for(const r of body.slice(0,50)){const a=impVal(r[j]),b=impVal(r[j+1]);if(isFinite(a)||isFinite(b)){tot++;if(impKind(a,b))ok++}}if(tot&&ok/tot>0.6)pick=j}
+   if(pick==null)continue;col={x:pick,y:pick+1};const nc=[...Array(W).keys()].find(j=>j!==pick&&j!==pick+1&&body.slice(0,20).some(r=>String(r[j]||'').trim()&&!isFinite(impVal(r[j]))));if(nc!=null)col.name=nc}
+  const ax=col.lat!=null?col.lat:col.x,bx=col.lat!=null?col.lon:col.y;const pts=[];
+  for(const r of body){const a=impVal(r[ax]),b=impVal(r[bx]);if(!isFinite(a)||!isFinite(b))continue;
+   pts.push({name:col.name!=null?String(r[col.name]??'').trim():'',a,b,ll:col.lat!=null?1:0,tu:col.tu!=null?String(r[col.tu]??'').trim():'',lt:col.lt!=null?String(r[col.lt]??'').trim():'',note:col.note!=null?String(r[col.note]??'').trim():''})}
+  if(pts.length>best.length){best=pts;IMP.map={sheet:sh.name,hdr:hi>=0?R[hi]:null,col}}}
+ return best}
+function impKML(txt){const doc=new DOMParser().parseFromString(txt,'text/xml');const out=[];
+ for(const pm of doc.getElementsByTagName('Placemark')){const nm=(pm.getElementsByTagName('name')[0]?.textContent||'').trim();const pt=pm.getElementsByTagName('Point')[0];
+  const cs=pt?pt.getElementsByTagName('coordinates')[0]:null;if(!cs)continue;const c=cs.textContent.trim().split(/\s+/)[0].split(',').map(Number);if(c.length>=2&&isFinite(c[0])&&isFinite(c[1]))out.push({name:nm,a:c[1],b:c[0],ll:1,note:(pm.getElementsByTagName('description')[0]?.textContent||'').replace(/<[^>]+>/g,' ').trim().slice(0,120)})}
+ return out}
+function impGPX(txt){const doc=new DOMParser().parseFromString(txt,'text/xml');const out=[];
+ for(const tag of['wpt','rtept','trkpt'])for(const w of doc.getElementsByTagName(tag)){const la=+w.getAttribute('lat'),lo=+w.getAttribute('lon');if(isFinite(la)&&isFinite(lo))out.push({name:(w.getElementsByTagName('name')[0]?.textContent||'').trim(),a:la,b:lo,ll:1})}
+ return out}
+function impGeoJSON(j){const out=[];const add=(g,pr)=>{if(!g)return;const nm=pr?String(pr.name??pr.ten??pr.Name??pr.ten_tru??pr.id??pr.ma??'').trim():'';
+  if(g.type==='Point')out.push({name:nm,a:g.coordinates[1],b:g.coordinates[0],ll:impKind(g.coordinates[1],g.coordinates[0])?1:0,raw:g.coordinates});
+  else if(g.type==='MultiPoint')g.coordinates.forEach(c=>out.push({name:nm,a:c[1],b:c[0],ll:1}));else if(g.type==='GeometryCollection')g.geometries.forEach(x=>add(x,pr))};
+ const walk=o=>{if(!o)return;if(Array.isArray(o)){o.forEach(walk);return}if(o.type==='FeatureCollection')o.features.forEach(walk);else if(o.type==='Feature')add(o.geometry,o.properties);else if(o.type)add(o,null);
+  else if(o.lat!=null&&(o.lng??o.lon)!=null)out.push({name:String(o.name??o.ten??'').trim(),a:+o.lat,b:+(o.lng??o.lon),ll:1})};
+ walk(j);
+ // GeoJSON có thể ghi VN2000 [X,Y]
+ for(const p of out)if(p.raw&&!p.ll){p.a=p.raw[0];p.b=p.raw[1]}return out}
+function impDXF(txt){const L=txt.split(/\r?\n/);const out=[];let i=0;while(i<L.length&&!(L[i].trim()==='2'&&L[i+1]&&L[i+1].trim()==='ENTITIES'))i++;
+ let cur=null;const flush=()=>{if(cur&&isFinite(cur.x)&&isFinite(cur.y)&&['POINT','INSERT','CIRCLE'].includes(cur.t))out.push({name:cur.att||'',a:cur.x,b:cur.y,ll:0,note:cur.t==='INSERT'?'Block '+(cur.bn||''):cur.t});};
+ for(;i+1<L.length;i+=2){const c=L[i].trim(),v=L[i+1].trim();
+  if(c==='0'){if(v==='ATTRIB'&&cur&&cur.t==='INSERT'){cur.inA=1;continue}if(v==='SEQEND'&&cur){cur.inA=0;continue}flush();cur={t:v,x:NaN,y:NaN};if(v==='ENDSEC')break;continue}
+  if(!cur)continue;if(cur.inA){if(c==='1'&&!cur.att&&v)cur.att=v;continue}
+  if(c==='10')cur.x=+v;else if(c==='20')cur.y=+v;else if(c==='2'&&cur.t==='INSERT')cur.bn=v}
+ flush();return out}
+// KMZ = zip: tìm file .kml đầu tiên, giải nén bằng DecompressionStream
+async function impUnzipKML(buf){const u=new Uint8Array(buf),dv=new DataView(buf);let e=u.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;if(e<0)throw new Error('File KMZ hỏng');
+ let p=dv.getUint32(e+16,true);const n=dv.getUint16(e+10,true);
+ for(let k=0;k<n;k++){const meth=dv.getUint16(p+10,true),cs=dv.getUint32(p+20,true),fl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true);
+  const name=new TextDecoder().decode(u.subarray(p+46,p+46+fl));p+=46+fl+xl+cl;if(!/\.kml$/i.test(name))continue;
+  const s=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true);const data=u.subarray(s,s+cs);
+  if(meth===0)return new TextDecoder().decode(data);
+  const ds=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));return await new Response(ds).text()}
+ throw new Error('Trong KMZ không có file .kml')}
+// ---- chuyển sang tọa độ app + xem trước
+function impSet(pts,src){IMP.src=src;IMP.raw=pts||[];impTuOpts();impApply();if(IMP.pts.length)impZoom()}
+function impApply(){const crs=$('impCrs')?$('impCrs').value:'auto';const out=$('impOut');out.hidden=false;IMP.pts=[];let off=0,bad=0;const cnt={wgs:0,vn:0};
+ const pad=20000,B=[bb[0]-pad,bb[1]-pad,bb[2]+pad,bb[3]+pad];
+ for(const p of IMP.raw){let a=p.a,b=p.b,k=crs==='wgs'?(impKind(a,b)==='wgs-sw'?'wgs-sw':'wgs'):crs==='vn'?(impKind(a,b)==='vn-sw'?'vn-sw':'vn'):impKind(a,b);
+  if(!k){bad++;continue}let X,Y;
+  if(k.startsWith('wgs')){const[la,lo]=k==='wgs'?[a,b]:[b,a];[X,Y]=GEO.toVN(la,lo);cnt.wgs++}else{[X,Y]=k==='vn'?[a,b]:[b,a];cnt.vn++}
+  const x=X-D.X0,y=Y-D.Y0;const inside=x>=B[0]&&x<=B[2]&&y>=B[1]&&y<=B[3];if(!inside)off++;IMP.pts.push({...p,x,y,inside})}
+ const ok=IMP.pts.filter(p=>p.inside).length;
+ const sample=IMP.pts.slice(0,6).map(p=>`<li>${esc(p.name||'(không tên)')} – ${GEO.toWGS(p.x+D.X0,p.y+D.Y0).map(v=>v.toFixed(6)).join(', ')}${p.inside?'':' <span class="warn">ngoài khu vực</span>'}</li>`).join('');
+ out.innerHTML=!IMP.raw.length?`<p class="warn">Không tìm thấy tọa độ nào trong ${esc(IMP.src)}.</p>`:
+  `<p><b>${esc(IMP.src)}</b>: đọc được <b>${IMP.pts.length}</b> điểm${IMP.map&&IMP.sheets&&IMP.sheets.length>1?` (trang "${esc(IMP.map.sheet)}")`:''} · ${cnt.wgs?cnt.wgs+' WGS84 ':''}${cnt.vn?cnt.vn+' VN2000':''}${bad?` · <span class="warn">${bad} dòng không nhận ra tọa độ</span>`:''}${off?` · <span class="warn">${off} điểm ngoài khu vực dữ liệu (sẽ bỏ qua)</span>`:''}</p><ul class="badl" style="color:inherit">${sample}${IMP.pts.length>6?'<li>…</li>':''}</ul>`;
+ $('impOpt').hidden=!ok;$('impGo').textContent=`Thêm ${ok} điểm thành trụ mới`;draw()}
+function impZoom(){const P_=IMP.pts.filter(p=>p.inside);if(!P_.length)return;const b=[1e9,1e9,-1e9,-1e9];for(const p of P_){b[0]=Math.min(b[0],p.x);b[1]=Math.min(b[1],p.y);b[2]=Math.max(b[2],p.x);b[3]=Math.max(b[3],p.y)}fit(b,80)}
+function impClear(){IMP.pts=[];IMP.raw=[];const o=$('impOut');if(o){o.hidden=true;o.innerHTML=''}if($('impOpt'))$('impOpt').hidden=true;draw()}
+function impLtOf(s,def){const u=unacc2(s);if(!u)return def;if(/led/.test(u))return'LED';if(/hps|sodium|natri|cao ap/.test(u))return'HPS';if(/mh|metal|halide/.test(u))return'MH';if(/trang tri|tt\b/.test(u))return'TT';if(/khong/.test(u))return'NONE';return def}
+function impCommit(){if(!canImp()){cmdMsg('Tài khoản chưa được chủ app cho phép nhập tọa độ');impGate();return}if(!canWrite){cmdMsg('Bạn chỉ có quyền xem');return}
+ const P_=IMP.pts.filter(p=>p.inside);if(!P_.length)return;const kd=+$('impKind').value,lt0=$('impLt').value,tuSel=$('impTu').value,skip=$('impSkip').checked;
+ const TUN=new Map();D.tu.forEach((t,k)=>TUN.set(unacc2(t),k));const used=new Set(P.map(p=>p[0]));const plan=[];let dup=0,deny=0;
+ for(const p of P_){const nb=nearestPole(p.x,p.y);if(skip&&nb>=0&&Math.hypot(PX[nb]-p.x,PY[nb]-p.y)<1){dup++;continue}
+  let t=tuSel!=='auto'?+tuSel:(p.tu&&TUN.has(unacc2(p.tu))?TUN.get(unacc2(p.tu)):(nb>=0?PT[nb]:0));
+  if(!tuAllowed(t)||(typeof tuEditable==='function'&&!tuEditable(t))){deny++;continue}plan.push({p,t,nb})}
+ if(!plan.length){cmdMsg(`Không có điểm nào để thêm${dup?` (${dup} điểm trùng trụ có sẵn)`:''}${deny?` (${deny} điểm thuộc tủ bạn không được sửa)`:''}`);return}
+ const ts=[...new Set(plan.map(q=>q.t))];
+ op(ts,()=>{const cntN={};for(const{p,t,nb}of plan){cntN[t]=(cntN[t]||Object.keys(ED[t].np).length)+1;let nm=(p.name||'').slice(0,60)||`${tuShort(t)}_M${cntN[t]}`;let k2=0;const base=nm;while(used.has(nm)&&k2++<500)nm=base+'_'+(k2+1);used.add(nm);
+   const lt=impLtOf(p.lt,lt0);const o={x:r2(p.x+D.X0),y:r2(p.y+D.Y0),a:nb>=0?angDeg(nb):90,k:kd,name:nm,w:nb>=0?PW[nb]:0,at:Date.now(),src:'imp'};o.lt=lt;if(p.note)o.note=p.note.slice(0,120);
+   ED[t].np[newId()]=o;vis[t]=1}});
+ renderTu();const n=plan.length;impClear();
+ cmdMsg(`Đã thêm ${n} trụ từ ${esc(IMP.src||'tọa độ')} vào ${ts.length} tủ${dup?` · bỏ ${dup} điểm trùng`:''}${deny?` · bỏ ${deny} điểm thuộc tủ không được sửa`:''} – nhớ bấm Cập nhật`);
+ if(typeof accLog==='function')accLog('import',{tu:`${n} điểm`})}
+// điểm xem trước trên bản đồ (dấu + cam)
+{const _r=render;render=function(){_r.apply(this,arguments);if(!IMP.pts.length)return;const g=g0;g.save();g.setTransform(dpr,0,0,dpr,0,0);g.lineWidth=2;g.font='600 11px system-ui,sans-serif';g.textAlign='left';g.textBaseline='alphabetic';
+ const many=IMP.pts.length>400;for(const p of IMP.pts){if(!p.inside)continue;const X=sx(p.x),Y=sy(p.y);if(X<-20||Y<-20||X>W+20||Y>H+20)continue;
+  g.strokeStyle='#fff';g.lineWidth=4;g.beginPath();g.moveTo(X-6,Y);g.lineTo(X+6,Y);g.moveTo(X,Y-6);g.lineTo(X,Y+6);g.stroke();
+  g.strokeStyle='#f57c00';g.lineWidth=2;g.beginPath();g.moveTo(X-6,Y);g.lineTo(X+6,Y);g.moveTo(X,Y-6);g.lineTo(X,Y+6);g.stroke();
+  if(!many&&k>0.5&&p.name){g.fillStyle='#f57c00';g.fillText(p.name,X+8,Y-6)}}g.restore()}}
+{const _a=applyAcc;applyAcc=function(){const r=_a.apply(this,arguments);impGate();return r}}
+setTimeout(impGate,600);
+window.__imp={IMP,impText,impSet,impCommit,canImp,impLoad};
+
 window.__LOC=LOC;
 window.__T={setTool,toolClick,sx,sy,get N(){return N},P:()=>P,PX:()=>PX,PY:()=>PY,ED:()=>ED,dirty:dirtyList};
 })();
 </script>
 <script>
-(function(){const V='1795098236';
+(function(){const V='1795147900';
  async function raw(n){let r=null;try{r=await fetch(n+'.gz?v='+V)}catch(e){}
   if(r&&r.ok){const u=new Uint8Array(await r.arrayBuffer());if(u[0]===0x1f&&u[1]===0x8b){if(!('DecompressionStream' in window))throw new Error('nogz');return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}return new TextDecoder().decode(u)}
   throw new Error('miss '+n)}
